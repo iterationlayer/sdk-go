@@ -642,28 +642,33 @@ type ImageFontDefinition struct {
   File   FileInput `json:"file"`
 }
 
-type SolidColorLayer struct {
+type SolidColorBackgroundLayer struct {
   Type     string `json:"type"`
   Index    int    `json:"index"`
   HexColor string `json:"hex_color"`
   Opacity  *int   `json:"opacity,omitempty"`
 }
 
-func (SolidColorLayer) isLayer() {}
+func (SolidColorBackgroundLayer) isLayer() {}
 
-func NewSolidColorLayer(index int, hexColor string) SolidColorLayer {
-  return SolidColorLayer{Type: "solid-color", Index: index, HexColor: hexColor}
+func NewSolidColorBackgroundLayer(index int, hexColor string) SolidColorBackgroundLayer {
+  return SolidColorBackgroundLayer{Type: "solid-color", Index: index, HexColor: hexColor}
 }
 
 type SolidColorLayer struct {
-  Type              string       `json:"type"`
-  Index             int          `json:"index"`
-  HexColor          string       `json:"hex_color"`
-  Position          Position     `json:"position"`
-  Dimensions        Dimensions   `json:"dimensions"`
-  RotationInDegrees *float64     `json:"rotation_in_degrees,omitempty"`
-  Opacity           *int         `json:"opacity,omitempty"`
-  AngledEdges       []AngledEdge `json:"angled_edges,omitempty"`
+  Type                    string       `json:"type"`
+  Index                   int          `json:"index"`
+  HexColor                string       `json:"hex_color"`
+  Position                Position     `json:"position"`
+  Dimensions              Dimensions   `json:"dimensions"`
+  RotationInDegrees       *float64     `json:"rotation_in_degrees,omitempty"`
+  Opacity                 *int         `json:"opacity,omitempty"`
+  AngledEdges             []AngledEdge `json:"angled_edges,omitempty"`
+  BorderRadius            *int         `json:"border_radius,omitempty"`
+  BorderTopLeftRadius     *int         `json:"border_top_left_radius,omitempty"`
+  BorderTopRightRadius    *int         `json:"border_top_right_radius,omitempty"`
+  BorderBottomLeftRadius  *int         `json:"border_bottom_left_radius,omitempty"`
+  BorderBottomRightRadius *int         `json:"border_bottom_right_radius,omitempty"`
 }
 
 func (SolidColorLayer) isLayer() {}
@@ -699,15 +704,20 @@ func NewTextLayer(index int, text string, fontName string, fontSizeInPx int, tex
 }
 
 type ImageLayer struct {
-  Type                   string     `json:"type"`
-  Index                  int        `json:"index"`
-  File                   FileInput  `json:"file"`
-  Position               Position   `json:"position"`
-  Dimensions             Dimensions `json:"dimensions"`
-  RotationInDegrees      *float64   `json:"rotation_in_degrees,omitempty"`
-  Opacity                *int       `json:"opacity,omitempty"`
-  ShouldUseSmartCropping *bool      `json:"should_use_smart_cropping,omitempty"`
-  ShouldRemoveBackground *bool      `json:"should_remove_background,omitempty"`
+  Type                    string     `json:"type"`
+  Index                   int        `json:"index"`
+  File                    FileInput  `json:"file"`
+  Position                Position   `json:"position"`
+  Dimensions              Dimensions `json:"dimensions"`
+  RotationInDegrees       *float64   `json:"rotation_in_degrees,omitempty"`
+  Opacity                 *int       `json:"opacity,omitempty"`
+  ShouldUseSmartCropping  *bool      `json:"should_use_smart_cropping,omitempty"`
+  ShouldRemoveBackground  *bool      `json:"should_remove_background,omitempty"`
+  BorderRadius            *int       `json:"border_radius,omitempty"`
+  BorderTopLeftRadius     *int       `json:"border_top_left_radius,omitempty"`
+  BorderTopRightRadius    *int       `json:"border_top_right_radius,omitempty"`
+  BorderBottomLeftRadius  *int       `json:"border_bottom_left_radius,omitempty"`
+  BorderBottomRightRadius *int       `json:"border_bottom_right_radius,omitempty"`
 }
 
 func (ImageLayer) isLayer() {}
@@ -716,7 +726,7 @@ func NewImageLayer(index int, file FileInput, position Position, dimensions Dime
   return ImageLayer{Type: "image", Index: index, File: file, Position: position, Dimensions: dimensions}
 }
 
-type ImageLayer struct {
+type ImageBackgroundLayer struct {
   Type                   string    `json:"type"`
   Index                  int       `json:"index"`
   File                   FileInput `json:"file"`
@@ -724,10 +734,10 @@ type ImageLayer struct {
   ShouldUseSmartCropping *bool     `json:"should_use_smart_cropping,omitempty"`
 }
 
-func (ImageLayer) isLayer() {}
+func (ImageBackgroundLayer) isLayer() {}
 
-func NewImageLayer(index int, file FileInput) ImageLayer {
-  return ImageLayer{Type: "image", Index: index, File: file}
+func NewImageBackgroundLayer(index int, file FileInput) ImageBackgroundLayer {
+  return ImageBackgroundLayer{Type: "image", Index: index, File: file}
 }
 
 type QrCodeLayer struct {
@@ -768,21 +778,56 @@ func NewBarcodeLayer(index int, value string, format string, fgColor string, bgC
 }
 
 type GradientLayer struct {
-  Type              string              `json:"type"`
-  Index             int                 `json:"index"`
-  GradientType      string              `json:"gradient_type"`
-  Colors            []GradientColorStop `json:"colors"`
-  Position          Position            `json:"position"`
-  Dimensions        Dimensions          `json:"dimensions"`
-  AngleInDegrees    *float64            `json:"angle_in_degrees,omitempty"`
-  RotationInDegrees *float64            `json:"rotation_in_degrees,omitempty"`
-  Opacity           *int                `json:"opacity,omitempty"`
+  Type                    string              `json:"type"`
+  Index                   int                 `json:"index"`
+  GradientType            string              `json:"gradient_type"`
+  Colors                  []GradientColorStop `json:"colors"`
+  Position                Position            `json:"position"`
+  Dimensions              Dimensions          `json:"dimensions"`
+  AngleInDegrees          *float64            `json:"angle_in_degrees,omitempty"`
+  RotationInDegrees       *float64            `json:"rotation_in_degrees,omitempty"`
+  Opacity                 *int                `json:"opacity,omitempty"`
+  BorderRadius            *int                `json:"border_radius,omitempty"`
+  BorderTopLeftRadius     *int                `json:"border_top_left_radius,omitempty"`
+  BorderTopRightRadius    *int                `json:"border_top_right_radius,omitempty"`
+  BorderBottomLeftRadius  *int                `json:"border_bottom_left_radius,omitempty"`
+  BorderBottomRightRadius *int                `json:"border_bottom_right_radius,omitempty"`
 }
 
 func (GradientLayer) isLayer() {}
 
 func NewGradientLayer(index int, gradientType string, colors []GradientColorStop, position Position, dimensions Dimensions) GradientLayer {
   return GradientLayer{Type: "gradient", Index: index, GradientType: gradientType, Colors: colors, Position: position, Dimensions: dimensions}
+}
+
+type LayoutLayer struct {
+  Type                   string      `json:"type"`
+  Index                  int         `json:"index"`
+  Layers                 []Layer     `json:"layers"`
+  Direction              string      `json:"direction,omitempty"`
+  Gap                    *int        `json:"gap,omitempty"`
+  HorizontalAlignment    string      `json:"horizontal_alignment,omitempty"`
+  VerticalAlignment      string      `json:"vertical_alignment,omitempty"`
+  Position               *Position   `json:"position,omitempty"`
+  Dimensions             *Dimensions `json:"dimensions,omitempty"`
+  Opacity                *int        `json:"opacity,omitempty"`
+  BackgroundColor        string      `json:"background_color,omitempty"`
+  Padding                *int        `json:"padding,omitempty"`
+  PaddingTop             *int        `json:"padding_top,omitempty"`
+  PaddingRight           *int        `json:"padding_right,omitempty"`
+  PaddingBottom          *int        `json:"padding_bottom,omitempty"`
+  PaddingLeft            *int        `json:"padding_left,omitempty"`
+  BorderRadius           *int        `json:"border_radius,omitempty"`
+  BorderTopLeftRadius    *int        `json:"border_top_left_radius,omitempty"`
+  BorderTopRightRadius   *int        `json:"border_top_right_radius,omitempty"`
+  BorderBottomLeftRadius *int        `json:"border_bottom_left_radius,omitempty"`
+  BorderBottomRightRadius *int       `json:"border_bottom_right_radius,omitempty"`
+}
+
+func (LayoutLayer) isLayer() {}
+
+func NewLayoutLayer(index int, layers []Layer) LayoutLayer {
+  return LayoutLayer{Type: "layout", Index: index, Layers: layers}
 }
 
 // ── Document Generation ────────────────────────────────────────────────────
@@ -1157,4 +1202,65 @@ type GenerateDocumentAsyncRequest struct {
   Format     string             `json:"format"`
   Document   DocumentDefinition `json:"document"`
   WebhookURL string             `json:"webhook_url"`
+}
+
+// Sheet Generation
+
+type SheetColumn struct {
+  Name  string  `json:"name"`
+  Width float64 `json:"width,omitempty"`
+}
+
+type SheetCellStyle struct {
+  FontFamily          string  `json:"font_family,omitempty"`
+  FontSizeInPt        float64 `json:"font_size_in_pt,omitempty"`
+  IsBold              bool    `json:"is_bold,omitempty"`
+  IsItalic            bool    `json:"is_italic,omitempty"`
+  FontColor           string  `json:"font_color,omitempty"`
+  BackgroundColor     string  `json:"background_color,omitempty"`
+  HorizontalAlignment string  `json:"horizontal_alignment,omitempty"`
+  NumberFormat        string  `json:"number_format,omitempty"`
+}
+
+type SheetCell struct {
+  Value       interface{}     `json:"value"`
+  Format      string          `json:"format,omitempty"`
+  CurrencyCode string         `json:"currency_code,omitempty"`
+  NumberStyle string          `json:"number_style,omitempty"`
+  DateStyle   string          `json:"date_style,omitempty"`
+  Styles      *SheetCellStyle `json:"styles,omitempty"`
+  FromCol     *int            `json:"from_col,omitempty"`
+  ToCol       *int            `json:"to_col,omitempty"`
+  FromRow     *int            `json:"from_row,omitempty"`
+  ToRow       *int            `json:"to_row,omitempty"`
+}
+
+type Sheet struct {
+  Name    string        `json:"name"`
+  Columns []SheetColumn `json:"columns"`
+  Rows    [][]SheetCell `json:"rows"`
+}
+
+type SheetStyles struct {
+  Header *SheetCellStyle `json:"header,omitempty"`
+  Body   *SheetCellStyle `json:"body,omitempty"`
+}
+
+type SheetFontDefinition struct {
+  Name   string `json:"name"`
+  Weight string `json:"weight"`
+  Style  string `json:"style"`
+  Buffer string `json:"buffer"`
+}
+
+type GenerateSheetRequest struct {
+  Format string        `json:"format"`
+  Sheets []Sheet       `json:"sheets"`
+  Styles *SheetStyles  `json:"styles,omitempty"`
+  Fonts  []SheetFontDefinition `json:"fonts,omitempty"`
+}
+
+type GenerateSheetAsyncRequest struct {
+  GenerateSheetRequest
+  WebhookURL string `json:"webhook_url"`
 }

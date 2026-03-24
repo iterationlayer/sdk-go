@@ -131,6 +131,24 @@ func (c *Client) GenerateDocumentAsync(req GenerateDocumentAsyncRequest) (*Async
   return c.postAsync("/document-generation/v1/generate", req)
 }
 
+func (c *Client) GenerateSheet(req GenerateSheetRequest) (*BinaryResult, error) {
+  rawData, err := c.post("/sheet-generation/v1/generate", req)
+  if err != nil {
+    return nil, err
+  }
+
+  var binary BinaryResult
+  if err := json.Unmarshal(rawData, &binary); err != nil {
+    return nil, fmt.Errorf("failed to parse sheet generation result: %w", err)
+  }
+
+  return &binary, nil
+}
+
+func (c *Client) GenerateSheetAsync(req GenerateSheetAsyncRequest) (*AsyncResult, error) {
+  return c.postAsync("/sheet-generation/v1/generate", req)
+}
+
 func (c *Client) post(path string, body any) (json.RawMessage, error) {
   respBody, statusCode, err := c.doRequest(path, body)
   if err != nil {

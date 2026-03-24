@@ -272,7 +272,7 @@ func TestGenerateImage(t *testing.T) {
     result, err := client.GenerateImage(GenerateImageRequest{
       Dimensions: Dimensions{WidthInPx: 1200, HeightInPx: 630},
       Layers: []Layer{
-        NewSolidColorLayer(0, "#ffffff"),
+        NewSolidColorBackgroundLayer(0, "#ffffff"),
         NewTextLayer(1, "Hello", "Arial", 48, "#000000",
           Position{XInPx: 100, YInPx: 100},
           Dimensions{WidthInPx: 1000, HeightInPx: 100}),
@@ -379,6 +379,166 @@ func TestGenerateDocument(t *testing.T) {
   })
 }
 
+func TestGenerateSheet(t *testing.T) {
+  t.Run("sends correct request and parses binary result", func(t *testing.T) {
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+      if r.URL.Path != "/sheet-generation/v1/generate" {
+        t.Errorf("expected /sheet-generation/v1/generate, got %s", r.URL.Path)
+      }
+
+      if r.Method != "POST" {
+        t.Errorf("expected POST, got %s", r.Method)
+      }
+
+      if r.Header.Get("Authorization") != "Bearer test-key" {
+        t.Errorf("expected Authorization Bearer test-key, got %s", r.Header.Get("Authorization"))
+      }
+
+      body, err := io.ReadAll(r.Body)
+      if err != nil {
+        t.Fatalf("failed to read request body: %v", err)
+      }
+
+      var requestPayload struct {
+        Format string            `json:"format"`
+        Sheets []json.RawMessage `json:"sheets"`
+      }
+      if err := json.Unmarshal(body, &requestPayload); err != nil {
+        t.Fatalf("failed to parse request body: %v", err)
+      }
+
+      if requestPayload.Format != "xlsx" {
+        t.Errorf("expected format 'xlsx', got %s", requestPayload.Format)
+      }
+
+      if len(requestPayload.Sheets) != 1 {
+        t.Fatalf("expected 1 sheet, got %d", len(requestPayload.Sheets))
+      }
+
+      var sheet struct {
+        Name    string            `json:"name"`
+        Columns []json.RawMessage `json:"columns"`
+        Rows    []json.RawMessage `json:"rows"`
+      }
+      if err := json.Unmarshal(requestPayload.Sheets[0], &sheet); err != nil {
+        t.Fatalf("failed to parse sheet: %v", err)
+      }
+
+      if sheet.Name != "Invoices" {
+        t.Errorf("expected sheet name 'Invoices', got %s", sheet.Name)
+      }
+
+      if len(sheet.Columns) != 2 {
+        t.Errorf("expected 2 columns, got %d", len(sheet.Columns))
+      }
+
+      if len(sheet.Rows) != 1 {
+        t.Errorf("expected 1 row, got %d", len(sheet.Rows))
+      }
+
+      w.WriteHeader(http.StatusOK)
+      w.Write([]byte(`{
+        "success": true,
+        "data": {
+          "buffer": "eGxzeGRhdGE=",
+          "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        }
+      }`))
+    }))
+    defer server.Close()
+
+    client := NewClient("test-key", WithBaseURL(server.URL))
+    result, err := client.GenerateSheet(GenerateSheetRequest{
+      Format: "xlsx",
+      Sheets: []Sheet{
+        {
+          Name: "Invoices",
+          Columns: []SheetColumn{
+            {Name: "Company", Width: 20},
+            {Name: "Total", Width: 15},
+          },
+          Rows: [][]SheetCell{
+            {
+              {Value: "Acme Corp"},
+              {Value: 1500.50, Format: "currency", CurrencyCode: "EUR"},
+            },
+          },
+        },
+      },
+    })
+
+    if err != nil {
+      t.Fatalf("unexpected error: %v", err)
+    }
+
+    if result == nil {
+      t.Fatal("expected binary result, got nil")
+    }
+
+    if result.Buffer != "eGxzeGRhdGE=" {
+      t.Errorf("expected buffer 'eGxzeGRhdGE=', got %s", result.Buffer)
+    }
+
+    if result.MimeType != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" {
+      t.Errorf("expected mime type 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', got %s", result.MimeType)
+    }
+  })
+}
+
+func TestGenerateSheetAsync(t *testing.T) {
+  t.Run("returns async result", func(t *testing.T) {
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+      if r.URL.Path != "/sheet-generation/v1/generate" {
+        t.Errorf("expected /sheet-generation/v1/generate, got %s", r.URL.Path)
+      }
+
+      body, err := io.ReadAll(r.Body)
+      if err != nil {
+        t.Fatalf("failed to read request body: %v", err)
+      }
+
+      var requestPayload struct {
+        Format     string `json:"format"`
+        WebhookURL string `json:"webhook_url"`
+      }
+      if err := json.Unmarshal(body, &requestPayload); err != nil {
+        t.Fatalf("failed to parse request body: %v", err)
+      }
+
+      if requestPayload.WebhookURL != "https://example.com/webhook" {
+        t.Errorf("expected webhook_url 'https://example.com/webhook', got %s", requestPayload.WebhookURL)
+      }
+
+      w.WriteHeader(http.StatusOK)
+      w.Write([]byte(`{"success": true, "async": true, "message": "Queued"}`))
+    }))
+    defer server.Close()
+
+    client := NewClient("test-key", WithBaseURL(server.URL))
+    result, err := client.GenerateSheetAsync(GenerateSheetAsyncRequest{
+      GenerateSheetRequest: GenerateSheetRequest{
+        Format: "xlsx",
+        Sheets: []Sheet{
+          {
+            Name:    "Sheet1",
+            Columns: []SheetColumn{{Name: "Name"}},
+            Rows:    [][]SheetCell{{{Value: "Test"}}},
+          },
+        },
+      },
+      WebhookURL: "https://example.com/webhook",
+    })
+
+    if err != nil {
+      t.Fatalf("unexpected error: %v", err)
+    }
+
+    if result.Message != "Queued" {
+      t.Errorf("expected message 'Queued', got %s", result.Message)
+    }
+  })
+}
+
 func TestAsyncResult(t *testing.T) {
   t.Run("ExtractAsync returns async result", func(t *testing.T) {
     server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -445,7 +605,7 @@ func TestAsyncResult(t *testing.T) {
     result, err := client.GenerateImageAsync(GenerateImageAsyncRequest{
       Dimensions: Dimensions{WidthInPx: 1200, HeightInPx: 630},
       Layers: []Layer{
-        NewSolidColorLayer(0, "#ffffff"),
+        NewSolidColorBackgroundLayer(0, "#ffffff"),
       },
       WebhookURL: "https://example.com/webhook",
     })
@@ -676,8 +836,8 @@ func TestRequestSerialization(t *testing.T) {
     }
   })
 
-  t.Run("NewSolidColorLayer serializes with correct type field", func(t *testing.T) {
-    layer := NewSolidColorLayer(0, "#ff0000")
+  t.Run("NewSolidColorBackgroundLayer serializes with correct type field", func(t *testing.T) {
+    layer := NewSolidColorBackgroundLayer(0, "#ff0000")
     jsonBytes, err := json.Marshal(layer)
     if err != nil {
       t.Fatalf("failed to marshal: %v", err)

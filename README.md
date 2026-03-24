@@ -131,6 +131,36 @@ if err != nil {
 pdfBase64 := result.Buffer
 ```
 
+### Sheet Generation
+
+Generate CSV, Markdown, or XLSX spreadsheets from structured data.
+
+```go
+result, err := client.GenerateSheet(il.GenerateSheetRequest{
+    Format: "xlsx",
+    Sheets: []il.Sheet{
+        {
+            Name: "Invoices",
+            Columns: []il.SheetColumn{
+                {Name: "Company", Width: 20},
+                {Name: "Total", Width: 15},
+            },
+            Rows: [][]il.SheetCell{
+                {
+                    {Value: "Acme Corp"},
+                    {Value: 1500.50, Format: "currency", CurrencyCode: "EUR"},
+                },
+            },
+        },
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+sheetBase64 := result.Buffer
+```
+
 ### Webhooks (Async)
 
 Use the `*Async` methods to receive results via webhook instead of waiting for the response.

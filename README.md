@@ -70,7 +70,7 @@ Compose images from layer definitions.
 
 ```go
 result, err := client.GenerateImage(il.GenerateImageRequest{
-    Dimensions: il.Dimensions{WidthInPx: 1200, HeightInPx: 630},
+    Dimensions: il.Dimensions{Width: 1200, Height: 630},
     Layers: []il.Layer{
         il.NewSolidColorBackgroundLayer(0, "#1a1a2e"),
         il.NewTextLayer(
@@ -79,8 +79,8 @@ result, err := client.GenerateImage(il.GenerateImageRequest{
             "Inter",
             48,
             "#ffffff",
-            il.Position{XInPx: 50, YInPx: 50},
-            il.Dimensions{WidthInPx: 1100, HeightInPx: 530},
+            il.Position{X: 50, Y: 50},
+            il.Dimensions{Width: 1100, Height: 530},
         ),
     },
     OutputFormat: "png",

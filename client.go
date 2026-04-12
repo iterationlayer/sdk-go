@@ -73,6 +73,10 @@ func (c *Client) ConvertToMarkdown(req ConvertRequest) (*MarkdownFileResult, err
 	return &result, nil
 }
 
+func (c *Client) ConvertToMarkdownAsync(req ConvertAsyncRequest) (*AsyncResult, error) {
+	return c.postAsync("/document-to-markdown/v1/convert", req)
+}
+
 func (c *Client) Extract(req ExtractRequest) (*ExtractionResult, error) {
 	rawData, err := c.post("/document-extraction/v1/extract", req)
 	if err != nil {

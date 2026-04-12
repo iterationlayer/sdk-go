@@ -81,6 +81,11 @@ type ConvertRequest struct {
 	File FileInput `json:"file"`
 }
 
+type ConvertAsyncRequest struct {
+	File       FileInput `json:"file"`
+	WebhookURL string    `json:"webhook_url"`
+}
+
 type MarkdownFileResult struct {
 	Name        string `json:"name"`
 	MimeType    string `json:"mime_type"`

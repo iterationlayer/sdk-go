@@ -634,13 +634,13 @@ func NewRemoveBackgroundOperation() RemoveBackgroundOperation {
 // ── Image Generation ───────────────────────────────────────────────────────
 
 type Dimensions struct {
-	Width  int `json:"width"`
-	Height int `json:"height"`
+	WidthInPx  int `json:"width_in_px"`
+	HeightInPx int `json:"height_in_px"`
 }
 
 type Position struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
+	XInPx float64 `json:"x_in_px"`
+	YInPx float64 `json:"y_in_px"`
 }
 
 type AngledEdge struct {

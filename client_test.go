@@ -239,8 +239,8 @@ func TestGenerateImage(t *testing.T) {
 
 			var requestPayload struct {
 				Dimensions struct {
-					Width  int `json:"width"`
-					Height int `json:"height"`
+					WidthInPx  int `json:"width_in_px"`
+					HeightInPx int `json:"height_in_px"`
 				} `json:"dimensions"`
 				Layers []json.RawMessage `json:"layers"`
 			}
@@ -248,9 +248,9 @@ func TestGenerateImage(t *testing.T) {
 				t.Fatalf("failed to parse request body: %v", err)
 			}
 
-			if requestPayload.Dimensions.Width != 1200 || requestPayload.Dimensions.Height != 630 {
+			if requestPayload.Dimensions.WidthInPx != 1200 || requestPayload.Dimensions.HeightInPx != 630 {
 				t.Errorf("expected dimensions 1200x630, got %dx%d",
-					requestPayload.Dimensions.Width, requestPayload.Dimensions.Height)
+					requestPayload.Dimensions.WidthInPx, requestPayload.Dimensions.HeightInPx)
 			}
 
 			if len(requestPayload.Layers) != 2 {
@@ -270,12 +270,12 @@ func TestGenerateImage(t *testing.T) {
 
 		client := NewClient("test-key", WithBaseURL(server.URL))
 		result, err := client.GenerateImage(GenerateImageRequest{
-			Dimensions: Dimensions{Width: 1200, Height: 630},
+			Dimensions: Dimensions{WidthInPx: 1200, HeightInPx: 630},
 			Layers: []Layer{
 				NewSolidColorBackgroundLayer(0, "#ffffff"),
 				NewTextLayer(1, "Hello", "Arial", 48, "#000000",
-					Position{X: 100, Y: 100},
-					Dimensions{Width: 1000, Height: 100}),
+					Position{XInPx: 100, YInPx: 100},
+					Dimensions{WidthInPx: 1000, HeightInPx: 100}),
 			},
 		})
 
@@ -603,7 +603,7 @@ func TestAsyncResult(t *testing.T) {
 
 		client := NewClient("test-key", WithBaseURL(server.URL))
 		result, err := client.GenerateImageAsync(GenerateImageAsyncRequest{
-			Dimensions: Dimensions{Width: 1200, Height: 630},
+			Dimensions: Dimensions{WidthInPx: 1200, HeightInPx: 630},
 			Layers: []Layer{
 				NewSolidColorBackgroundLayer(0, "#ffffff"),
 			},

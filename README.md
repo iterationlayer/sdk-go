@@ -27,7 +27,7 @@ func main() {
 Extract structured data from documents using AI.
 
 ```go
-result, err := client.Extract(il.ExtractRequest{
+result, err := client.ExtractDocument(il.ExtractDocumentRequest{
     Files: []il.FileInput{
         il.NewFileFromURL("invoice.pdf", "https://example.com/invoice.pdf"),
     },
@@ -45,12 +45,40 @@ fmt.Println(companyName.Value)      // "Acme Corp"
 fmt.Println(companyName.Confidence) // 0.95
 ```
 
+### Website Extraction
+
+Extract structured data from public website pages. Static fetching is used by default; set `ShouldRenderJavascript` when a page needs browser rendering.
+
+```go
+shouldRenderJavascript := true
+
+result, err := client.ExtractWebsite(il.ExtractWebsiteRequest{
+    File: il.FileInputURL{
+        Type: "url",
+        URL:  "https://example.com/pricing",
+        FetchOptions: &il.FileFetchOptions{
+            ShouldRenderJavascript: &shouldRenderJavascript,
+        },
+    },
+    Schema: il.ExtractionSchema{
+        "plan_name": il.NewTextFieldConfig("plan_name", "The pricing plan name"),
+        "price":     il.NewCurrencyAmountFieldConfig("price", "The monthly price"),
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+planName := (*result)["plan_name"]
+fmt.Println(planName.Value) // "Pro"
+```
+
 ### Image Transformation
 
 Resize, crop, convert, and apply effects to images.
 
 ```go
-result, err := client.Transform(il.TransformRequest{
+result, err := client.TransformImage(il.TransformImageRequest{
     File: il.NewFileFromURL("photo.jpg", "https://example.com/photo.jpg"),
     Operations: []il.TransformOperation{
         il.NewResizeOperation(800, 600, "cover"),
@@ -166,7 +194,7 @@ sheetBase64 := result.Buffer
 Use the `*Async` methods to receive results via webhook instead of waiting for the response.
 
 ```go
-result, err := client.ExtractAsync(il.ExtractAsyncRequest{
+result, err := client.ExtractDocumentAsync(il.ExtractDocumentAsyncRequest{
     Files: []il.FileInput{
         il.NewFileFromURL("invoice.pdf", "https://example.com/invoice.pdf"),
     },
@@ -182,7 +210,7 @@ fmt.Println(result.Message) // "Request accepted..."
 ### Error Handling
 
 ```go
-result, err := client.Extract(req)
+result, err := client.ExtractDocument(req)
 if err != nil {
     var apiErr *il.Error
     if errors.As(err, &apiErr) {

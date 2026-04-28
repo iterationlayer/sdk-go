@@ -9,10 +9,8 @@ import (
 	"time"
 )
 
-const (
-	defaultBaseURL    = "https://api.iterationlayer.com"
-	defaultTimeoutInS = 300
-)
+const defaultBaseURL = "https://api.iterationlayer.com"
+const defaultTimeoutInS = 300
 
 type Client struct {
 	apiKey     string
@@ -22,31 +20,17 @@ type Client struct {
 
 type Option func(*Client)
 
-func WithBaseURL(baseURL string) Option {
-	return func(client *Client) {
-		client.baseURL = baseURL
-	}
-}
+func WithBaseURL(baseURL string) Option { return func(client *Client) { client.baseURL = baseURL } }
 
 func WithHTTPClient(httpClient *http.Client) Option {
-	return func(client *Client) {
-		client.httpClient = httpClient
-	}
+	return func(client *Client) { client.httpClient = httpClient }
 }
 
 func NewClient(apiKey string, opts ...Option) *Client {
-	client := &Client{
-		apiKey:  apiKey,
-		baseURL: defaultBaseURL,
-		httpClient: &http.Client{
-			Timeout: defaultTimeoutInS * time.Second,
-		},
-	}
-
+	client := &Client{apiKey: apiKey, baseURL: defaultBaseURL, httpClient: &http.Client{Timeout: defaultTimeoutInS * time.Second}}
 	for _, opt := range opts {
 		opt(client)
 	}
-
 	return client
 }
 
@@ -59,76 +43,20 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("Iteration Layer API error (%d): %s", e.StatusCode, e.ErrorMessage)
 }
 
-func (c *Client) ConvertToMarkdown(req ConvertRequest) (*MarkdownFileResult, error) {
-	rawData, err := c.post("/document-to-markdown/v1/convert", req)
-	if err != nil {
-		return nil, err
-	}
-
-	var result MarkdownFileResult
-	if err := json.Unmarshal(rawData, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse convert result: %w", err)
-	}
-
-	return &result, nil
-}
-
-func (c *Client) ConvertToMarkdownAsync(req ConvertAsyncRequest) (*AsyncResult, error) {
-	return c.postAsync("/document-to-markdown/v1/convert", req)
-}
-
-func (c *Client) Extract(req ExtractRequest) (*ExtractionResult, error) {
+func (c *Client) ExtractDocument(req ExtractDocumentRequest) (*ExtractionResult, error) {
 	rawData, err := c.post("/document-extraction/v1/extract", req)
 	if err != nil {
 		return nil, err
 	}
-
-	var extraction ExtractionResult
-	if err := json.Unmarshal(rawData, &extraction); err != nil {
-		return nil, fmt.Errorf("failed to parse extraction result: %w", err)
+	var result ExtractionResult
+	if err := json.Unmarshal(rawData, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-
-	return &extraction, nil
+	return &result, nil
 }
 
-func (c *Client) ExtractAsync(req ExtractAsyncRequest) (*AsyncResult, error) {
+func (c *Client) ExtractDocumentAsync(req ExtractDocumentAsyncRequest) (*AsyncResult, error) {
 	return c.postAsync("/document-extraction/v1/extract", req)
-}
-
-func (c *Client) Transform(req TransformRequest) (*BinaryResult, error) {
-	rawData, err := c.post("/image-transformation/v1/transform", req)
-	if err != nil {
-		return nil, err
-	}
-
-	var binary BinaryResult
-	if err := json.Unmarshal(rawData, &binary); err != nil {
-		return nil, fmt.Errorf("failed to parse transform result: %w", err)
-	}
-
-	return &binary, nil
-}
-
-func (c *Client) TransformAsync(req TransformAsyncRequest) (*AsyncResult, error) {
-	return c.postAsync("/image-transformation/v1/transform", req)
-}
-
-func (c *Client) GenerateImage(req GenerateImageRequest) (*BinaryResult, error) {
-	rawData, err := c.post("/image-generation/v1/generate", req)
-	if err != nil {
-		return nil, err
-	}
-
-	var binary BinaryResult
-	if err := json.Unmarshal(rawData, &binary); err != nil {
-		return nil, fmt.Errorf("failed to parse image generation result: %w", err)
-	}
-
-	return &binary, nil
-}
-
-func (c *Client) GenerateImageAsync(req GenerateImageAsyncRequest) (*AsyncResult, error) {
-	return c.postAsync("/image-generation/v1/generate", req)
 }
 
 func (c *Client) GenerateDocument(req GenerateDocumentRequest) (*BinaryResult, error) {
@@ -136,17 +64,63 @@ func (c *Client) GenerateDocument(req GenerateDocumentRequest) (*BinaryResult, e
 	if err != nil {
 		return nil, err
 	}
-
-	var binary BinaryResult
-	if err := json.Unmarshal(rawData, &binary); err != nil {
-		return nil, fmt.Errorf("failed to parse document generation result: %w", err)
+	var result BinaryResult
+	if err := json.Unmarshal(rawData, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-
-	return &binary, nil
+	return &result, nil
 }
 
 func (c *Client) GenerateDocumentAsync(req GenerateDocumentAsyncRequest) (*AsyncResult, error) {
 	return c.postAsync("/document-generation/v1/generate", req)
+}
+
+func (c *Client) ConvertDocumentToMarkdown(req ConvertDocumentToMarkdownRequest) (*MarkdownFileResult, error) {
+	rawData, err := c.post("/document-to-markdown/v1/convert", req)
+	if err != nil {
+		return nil, err
+	}
+	var result MarkdownFileResult
+	if err := json.Unmarshal(rawData, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) ConvertDocumentToMarkdownAsync(req ConvertDocumentToMarkdownAsyncRequest) (*AsyncResult, error) {
+	return c.postAsync("/document-to-markdown/v1/convert", req)
+}
+
+func (c *Client) GenerateImage(req GenerateImageRequest) (*BinaryResult, error) {
+	rawData, err := c.post("/image-generation/v1/generate", req)
+	if err != nil {
+		return nil, err
+	}
+	var result BinaryResult
+	if err := json.Unmarshal(rawData, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) GenerateImageAsync(req GenerateImageAsyncRequest) (*AsyncResult, error) {
+	return c.postAsync("/image-generation/v1/generate", req)
+}
+
+func (c *Client) TransformImage(req TransformImageRequest) (*BinaryResult, error) {
+	rawData, err := c.post("/image-transformation/v1/transform", req)
+	if err != nil {
+		return nil, err
+	}
+	var result BinaryResult
+	if err := json.Unmarshal(rawData, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) TransformImageAsync(req TransformImageAsyncRequest) (*AsyncResult, error) {
+	return c.postAsync("/image-transformation/v1/transform", req)
 }
 
 func (c *Client) GenerateSheet(req GenerateSheetRequest) (*BinaryResult, error) {
@@ -154,17 +128,31 @@ func (c *Client) GenerateSheet(req GenerateSheetRequest) (*BinaryResult, error) 
 	if err != nil {
 		return nil, err
 	}
-
-	var binary BinaryResult
-	if err := json.Unmarshal(rawData, &binary); err != nil {
-		return nil, fmt.Errorf("failed to parse sheet generation result: %w", err)
+	var result BinaryResult
+	if err := json.Unmarshal(rawData, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-
-	return &binary, nil
+	return &result, nil
 }
 
 func (c *Client) GenerateSheetAsync(req GenerateSheetAsyncRequest) (*AsyncResult, error) {
 	return c.postAsync("/sheet-generation/v1/generate", req)
+}
+
+func (c *Client) ExtractWebsite(req ExtractWebsiteRequest) (*ExtractionResult, error) {
+	rawData, err := c.post("/website-extraction/v1/extract", req)
+	if err != nil {
+		return nil, err
+	}
+	var result ExtractionResult
+	if err := json.Unmarshal(rawData, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) ExtractWebsiteAsync(req ExtractWebsiteAsyncRequest) (*AsyncResult, error) {
+	return c.postAsync("/website-extraction/v1/extract", req)
 }
 
 func (c *Client) post(path string, body any) (json.RawMessage, error) {
@@ -172,24 +160,17 @@ func (c *Client) post(path string, body any) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	var parsed struct {
 		Success bool            `json:"success"`
 		Data    json.RawMessage `json:"data"`
 		Error   string          `json:"error"`
 	}
-
 	if err := json.Unmarshal(respBody, &parsed); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-
 	if !parsed.Success {
-		return nil, &Error{
-			StatusCode:   statusCode,
-			ErrorMessage: parsed.Error,
-		}
+		return nil, &Error{StatusCode: statusCode, ErrorMessage: parsed.Error}
 	}
-
 	return parsed.Data, nil
 }
 
@@ -198,25 +179,18 @@ func (c *Client) postAsync(path string, body any) (*AsyncResult, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	var parsed struct {
 		Success bool   `json:"success"`
 		Async   bool   `json:"async"`
 		Message string `json:"message"`
 		Error   string `json:"error"`
 	}
-
 	if err := json.Unmarshal(respBody, &parsed); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-
 	if !parsed.Success {
-		return nil, &Error{
-			StatusCode:   statusCode,
-			ErrorMessage: parsed.Error,
-		}
+		return nil, &Error{StatusCode: statusCode, ErrorMessage: parsed.Error}
 	}
-
 	return &AsyncResult{Message: parsed.Message}, nil
 }
 
@@ -225,25 +199,20 @@ func (c *Client) doRequest(path string, body any) ([]byte, int, error) {
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to marshal request: %w", err)
 	}
-
 	req, err := http.NewRequest("POST", c.baseURL+path, bytes.NewReader(jsonBody))
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to create request: %w", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
-
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to read response: %w", err)
+		return nil, resp.StatusCode, fmt.Errorf("failed to read response: %w", err)
 	}
-
 	return respBody, resp.StatusCode, nil
 }

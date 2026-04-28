@@ -1,60 +1,9 @@
 package iterationlayer
 
-// ── Marker Interfaces ──────────────────────────────────────────────────────
-// These interfaces enable type-safe polymorphic slices in Go.
-// Each variant struct implements the interface via the embedded marker method.
-
-type FileInput interface {
-	isFileInput()
+type BinaryResult struct {
+	Buffer   []byte `json:"buffer"`
+	MimeType string `json:"mime_type"`
 }
-
-type FieldConfig interface {
-	isFieldConfig()
-}
-
-type TransformOperation interface {
-	isTransformOperation()
-}
-
-type Layer interface {
-	isLayer()
-}
-
-type ContentBlock interface {
-	isContentBlock()
-}
-
-type HeaderFooterBlock interface {
-	isHeaderFooterBlock()
-}
-
-// ── File Input ──────────────────────────────────────────────────────────────
-
-type FileInputBase64 struct {
-	Type   string `json:"type"`
-	Name   string `json:"name"`
-	Base64 string `json:"base64"`
-}
-
-func (FileInputBase64) isFileInput() {}
-
-func NewFileFromBase64(name string, base64Content string) FileInputBase64 {
-	return FileInputBase64{Type: "base64", Name: name, Base64: base64Content}
-}
-
-type FileInputURL struct {
-	Type string `json:"type"`
-	Name string `json:"name"`
-	URL  string `json:"url"`
-}
-
-func (FileInputURL) isFileInput() {}
-
-func NewFileFromURL(name string, url string) FileInputURL {
-	return FileInputURL{Type: "url", Name: name, URL: url}
-}
-
-// ── Responses ──────────────────────────────────────────────────────────────
 
 type ExtractionFieldResult struct {
 	Value      any      `json:"value"`
@@ -66,26 +15,6 @@ type ExtractionFieldResult struct {
 
 type ExtractionResult map[string]ExtractionFieldResult
 
-type BinaryResult struct {
-	Buffer   string `json:"buffer"`
-	MimeType string `json:"mime_type"`
-}
-
-type AsyncResult struct {
-	Message string `json:"message"`
-}
-
-// ── Document to Markdown ────────────────────────────────────────────────────
-
-type ConvertRequest struct {
-	File FileInput `json:"file"`
-}
-
-type ConvertAsyncRequest struct {
-	File       FileInput `json:"file"`
-	WebhookURL string    `json:"webhook_url"`
-}
-
 type MarkdownFileResult struct {
 	Name        string `json:"name"`
 	MimeType    string `json:"mime_type"`
@@ -93,1241 +22,1457 @@ type MarkdownFileResult struct {
 	Description string `json:"description,omitempty"`
 }
 
-// ── Document Extraction ────────────────────────────────────────────────────
-
-type TextFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	MaxLength    *int   `json:"max_length,omitempty"`
-	DefaultValue string `json:"default_value,omitempty"`
-}
-
-func (TextFieldConfig) isFieldConfig() {}
-
-func NewTextFieldConfig(name string, description string) TextFieldConfig {
-	return TextFieldConfig{Type: "TEXT", Name: name, Description: description}
-}
-
-type TextareaFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	MaxLength    *int   `json:"max_length,omitempty"`
-	DefaultValue string `json:"default_value,omitempty"`
-}
-
-func (TextareaFieldConfig) isFieldConfig() {}
-
-func NewTextareaFieldConfig(name string, description string) TextareaFieldConfig {
-	return TextareaFieldConfig{Type: "TEXTAREA", Name: name, Description: description}
-}
-
-type IntegerFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	Min          *int   `json:"min,omitempty"`
-	Max          *int   `json:"max,omitempty"`
-	Unit         string `json:"unit,omitempty"`
-	DefaultValue *int   `json:"default_value,omitempty"`
-}
-
-func (IntegerFieldConfig) isFieldConfig() {}
-
-func NewIntegerFieldConfig(name string, description string) IntegerFieldConfig {
-	return IntegerFieldConfig{Type: "INTEGER", Name: name, Description: description}
-}
-
-type DecimalFieldConfig struct {
-	Type          string   `json:"type"`
-	Name          string   `json:"name"`
-	Description   string   `json:"description"`
-	IsRequired    *bool    `json:"is_required,omitempty"`
-	Min           *float64 `json:"min,omitempty"`
-	Max           *float64 `json:"max,omitempty"`
-	DecimalPoints *int     `json:"decimal_points,omitempty"`
-	Unit          string   `json:"unit,omitempty"`
-	DefaultValue  *float64 `json:"default_value,omitempty"`
-}
-
-func (DecimalFieldConfig) isFieldConfig() {}
-
-func NewDecimalFieldConfig(name string, description string) DecimalFieldConfig {
-	return DecimalFieldConfig{Type: "DECIMAL", Name: name, Description: description}
-}
-
-type DateFieldConfig struct {
-	Type             string `json:"type"`
-	Name             string `json:"name"`
-	Description      string `json:"description"`
-	IsRequired       *bool  `json:"is_required,omitempty"`
-	AllowFutureDates *bool  `json:"allow_future_dates,omitempty"`
-	AllowPastDates   *bool  `json:"allow_past_dates,omitempty"`
-}
-
-func (DateFieldConfig) isFieldConfig() {}
-
-func NewDateFieldConfig(name string, description string) DateFieldConfig {
-	return DateFieldConfig{Type: "DATE", Name: name, Description: description}
-}
-
-type DatetimeFieldConfig struct {
-	Type             string `json:"type"`
-	Name             string `json:"name"`
-	Description      string `json:"description"`
-	IsRequired       *bool  `json:"is_required,omitempty"`
-	AllowFutureDates *bool  `json:"allow_future_dates,omitempty"`
-	AllowPastDates   *bool  `json:"allow_past_dates,omitempty"`
-}
-
-func (DatetimeFieldConfig) isFieldConfig() {}
-
-func NewDatetimeFieldConfig(name string, description string) DatetimeFieldConfig {
-	return DatetimeFieldConfig{Type: "DATETIME", Name: name, Description: description}
-}
-
-type TimeFieldConfig struct {
-	Type        string `json:"type"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IsRequired  *bool  `json:"is_required,omitempty"`
-}
-
-func (TimeFieldConfig) isFieldConfig() {}
-
-func NewTimeFieldConfig(name string, description string) TimeFieldConfig {
-	return TimeFieldConfig{Type: "TIME", Name: name, Description: description}
-}
-
-type EnumFieldConfig struct {
-	Type         string   `json:"type"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Values       []string `json:"values"`
-	IsRequired   *bool    `json:"is_required,omitempty"`
-	MinSelected  *int     `json:"min_selected,omitempty"`
-	MaxSelected  *int     `json:"max_selected,omitempty"`
-	DefaultValue []string `json:"default_value,omitempty"`
-}
-
-func (EnumFieldConfig) isFieldConfig() {}
-
-func NewEnumFieldConfig(name string, description string, values []string) EnumFieldConfig {
-	return EnumFieldConfig{Type: "ENUM", Name: name, Description: description, Values: values}
-}
-
-type BooleanFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	DefaultValue *bool  `json:"default_value,omitempty"`
-}
-
-func (BooleanFieldConfig) isFieldConfig() {}
-
-func NewBooleanFieldConfig(name string, description string) BooleanFieldConfig {
-	return BooleanFieldConfig{Type: "BOOLEAN", Name: name, Description: description}
-}
-
-type EmailFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	DefaultValue string `json:"default_value,omitempty"`
-}
-
-func (EmailFieldConfig) isFieldConfig() {}
-
-func NewEmailFieldConfig(name string, description string) EmailFieldConfig {
-	return EmailFieldConfig{Type: "EMAIL", Name: name, Description: description}
-}
-
-type IbanFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	DefaultValue string `json:"default_value,omitempty"`
-}
-
-func (IbanFieldConfig) isFieldConfig() {}
-
-func NewIbanFieldConfig(name string, description string) IbanFieldConfig {
-	return IbanFieldConfig{Type: "IBAN", Name: name, Description: description}
-}
-
-type CountryFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	DefaultValue string `json:"default_value,omitempty"`
-}
-
-func (CountryFieldConfig) isFieldConfig() {}
-
-func NewCountryFieldConfig(name string, description string) CountryFieldConfig {
-	return CountryFieldConfig{Type: "COUNTRY", Name: name, Description: description}
-}
-
-type CurrencyCodeFieldConfig struct {
-	Type         string `json:"type"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	IsRequired   *bool  `json:"is_required,omitempty"`
-	DefaultValue string `json:"default_value,omitempty"`
-}
-
-func (CurrencyCodeFieldConfig) isFieldConfig() {}
-
-func NewCurrencyCodeFieldConfig(name string, description string) CurrencyCodeFieldConfig {
-	return CurrencyCodeFieldConfig{Type: "CURRENCY_CODE", Name: name, Description: description}
-}
-
-type CurrencyAmountFieldConfig struct {
-	Type          string   `json:"type"`
-	Name          string   `json:"name"`
-	Description   string   `json:"description"`
-	IsRequired    *bool    `json:"is_required,omitempty"`
-	Min           *float64 `json:"min,omitempty"`
-	Max           *float64 `json:"max,omitempty"`
-	DecimalPoints *int     `json:"decimal_points,omitempty"`
-	DefaultValue  *float64 `json:"default_value,omitempty"`
-}
-
-func (CurrencyAmountFieldConfig) isFieldConfig() {}
-
-func NewCurrencyAmountFieldConfig(name string, description string) CurrencyAmountFieldConfig {
-	return CurrencyAmountFieldConfig{Type: "CURRENCY_AMOUNT", Name: name, Description: description}
+type AsyncResult struct {
+	Message string `json:"message"`
 }
 
 type AddressFieldConfig struct {
-	Type                string   `json:"type"`
-	Name                string   `json:"name"`
-	Description         string   `json:"description"`
-	IsRequired          *bool    `json:"is_required,omitempty"`
+	// AllowedCountryCodes List of ISO 3166-1 alpha-2 country codes to restrict valid addresses to.
 	AllowedCountryCodes []string `json:"allowed_country_codes,omitempty"`
-}
-
-func (AddressFieldConfig) isFieldConfig() {}
-
-func NewAddressFieldConfig(name string, description string) AddressFieldConfig {
-	return AddressFieldConfig{Type: "ADDRESS", Name: name, Description: description}
-}
-
-type ItemSchema struct {
-	Fields []FieldConfig `json:"fields"`
-}
-
-type ArrayFieldConfig struct {
-	Type        string     `json:"type"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	ItemSchema  ItemSchema `json:"item_schema"`
-	IsRequired  *bool      `json:"is_required,omitempty"`
-}
-
-func (ArrayFieldConfig) isFieldConfig() {}
-
-func NewArrayFieldConfig(name string, description string, itemFields []FieldConfig) ArrayFieldConfig {
-	return ArrayFieldConfig{Type: "ARRAY", Name: name, Description: description, ItemSchema: ItemSchema{Fields: itemFields}}
-}
-
-type CalculatedFieldConfig struct {
-	Type             string   `json:"type"`
-	Name             string   `json:"name"`
-	Description      string   `json:"description"`
-	Operation        string   `json:"operation"`
-	SourceFieldNames []string `json:"source_field_names"`
-	IsRequired       *bool    `json:"is_required,omitempty"`
-	Unit             string   `json:"unit,omitempty"`
-}
-
-func (CalculatedFieldConfig) isFieldConfig() {}
-
-func NewCalculatedFieldConfig(name string, description string, operation string, sourceFieldNames []string) CalculatedFieldConfig {
-	return CalculatedFieldConfig{Type: "CALCULATED", Name: name, Description: description, Operation: operation, SourceFieldNames: sourceFieldNames}
-}
-
-// ── Image Transformation ───────────────────────────────────────────────────
-
-type ResizeOperation struct {
-	Type       string `json:"type"`
-	WidthInPx  int    `json:"width_in_px"`
-	HeightInPx int    `json:"height_in_px"`
-	Fit        string `json:"fit"`
-}
-
-func (ResizeOperation) isTransformOperation() {}
-
-func NewResizeOperation(widthInPx int, heightInPx int, fit string) ResizeOperation {
-	return ResizeOperation{Type: "resize", WidthInPx: widthInPx, HeightInPx: heightInPx, Fit: fit}
-}
-
-type CropOperation struct {
-	Type       string `json:"type"`
-	LeftInPx   int    `json:"left_in_px"`
-	TopInPx    int    `json:"top_in_px"`
-	WidthInPx  int    `json:"width_in_px"`
-	HeightInPx int    `json:"height_in_px"`
-}
-
-func (CropOperation) isTransformOperation() {}
-
-func NewCropOperation(leftInPx int, topInPx int, widthInPx int, heightInPx int) CropOperation {
-	return CropOperation{Type: "crop", LeftInPx: leftInPx, TopInPx: topInPx, WidthInPx: widthInPx, HeightInPx: heightInPx}
-}
-
-type ExtendOperation struct {
-	Type       string `json:"type"`
-	TopInPx    int    `json:"top_in_px"`
-	BottomInPx int    `json:"bottom_in_px"`
-	LeftInPx   int    `json:"left_in_px"`
-	RightInPx  int    `json:"right_in_px"`
-	HexColor   string `json:"hex_color"`
-}
-
-func (ExtendOperation) isTransformOperation() {}
-
-func NewExtendOperation(topInPx int, bottomInPx int, leftInPx int, rightInPx int, hexColor string) ExtendOperation {
-	return ExtendOperation{Type: "extend", TopInPx: topInPx, BottomInPx: bottomInPx, LeftInPx: leftInPx, RightInPx: rightInPx, HexColor: hexColor}
-}
-
-type TrimOperation struct {
-	Type      string `json:"type"`
-	Threshold int    `json:"threshold"`
-}
-
-func (TrimOperation) isTransformOperation() {}
-
-func NewTrimOperation(threshold int) TrimOperation {
-	return TrimOperation{Type: "trim", Threshold: threshold}
-}
-
-type RotateOperation struct {
-	Type           string  `json:"type"`
-	AngleInDegrees float64 `json:"angle_in_degrees"`
-	HexColor       string  `json:"hex_color,omitempty"`
-}
-
-func (RotateOperation) isTransformOperation() {}
-
-func NewRotateOperation(angleInDegrees float64) RotateOperation {
-	return RotateOperation{Type: "rotate", AngleInDegrees: angleInDegrees}
-}
-
-type FlipOperation struct {
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'ADDRESS' for a structured address field.
 	Type string `json:"type"`
 }
-
-func (FlipOperation) isTransformOperation() {}
-
-func NewFlipOperation() FlipOperation {
-	return FlipOperation{Type: "flip"}
-}
-
-type FlopOperation struct {
-	Type string `json:"type"`
-}
-
-func (FlopOperation) isTransformOperation() {}
-
-func NewFlopOperation() FlopOperation {
-	return FlopOperation{Type: "flop"}
-}
-
-type BlurOperation struct {
-	Type  string  `json:"type"`
-	Sigma float64 `json:"sigma"`
-}
-
-func (BlurOperation) isTransformOperation() {}
-
-func NewBlurOperation(sigma float64) BlurOperation {
-	return BlurOperation{Type: "blur", Sigma: sigma}
-}
-
-type SharpenOperation struct {
-	Type  string  `json:"type"`
-	Sigma float64 `json:"sigma"`
-}
-
-func (SharpenOperation) isTransformOperation() {}
-
-func NewSharpenOperation(sigma float64) SharpenOperation {
-	return SharpenOperation{Type: "sharpen", Sigma: sigma}
-}
-
-type ModulateOperation struct {
-	Type       string   `json:"type"`
-	Brightness *float64 `json:"brightness,omitempty"`
-	Saturation *float64 `json:"saturation,omitempty"`
-	Hue        *float64 `json:"hue,omitempty"`
-}
-
-func (ModulateOperation) isTransformOperation() {}
-
-func NewModulateOperation() ModulateOperation {
-	return ModulateOperation{Type: "modulate"}
-}
-
-type TintOperation struct {
-	Type     string `json:"type"`
-	HexColor string `json:"hex_color"`
-}
-
-func (TintOperation) isTransformOperation() {}
-
-func NewTintOperation(hexColor string) TintOperation {
-	return TintOperation{Type: "tint", HexColor: hexColor}
-}
-
-type GrayscaleOperation struct {
-	Type string `json:"type"`
-}
-
-func (GrayscaleOperation) isTransformOperation() {}
-
-func NewGrayscaleOperation() GrayscaleOperation {
-	return GrayscaleOperation{Type: "grayscale"}
-}
-
-type InvertColorsOperation struct {
-	Type string `json:"type"`
-}
-
-func (InvertColorsOperation) isTransformOperation() {}
-
-func NewInvertColorsOperation() InvertColorsOperation {
-	return InvertColorsOperation{Type: "invert_colors"}
-}
-
-type AutoContrastOperation struct {
-	Type string `json:"type"`
-}
-
-func (AutoContrastOperation) isTransformOperation() {}
-
-func NewAutoContrastOperation() AutoContrastOperation {
-	return AutoContrastOperation{Type: "auto_contrast"}
-}
-
-type GammaOperation struct {
-	Type  string  `json:"type"`
-	Gamma float64 `json:"gamma"`
-}
-
-func (GammaOperation) isTransformOperation() {}
-
-func NewGammaOperation(gamma float64) GammaOperation {
-	return GammaOperation{Type: "gamma", Gamma: gamma}
-}
-
-type RemoveTransparencyOperation struct {
-	Type     string `json:"type"`
-	HexColor string `json:"hex_color"`
-}
-
-func (RemoveTransparencyOperation) isTransformOperation() {}
-
-func NewRemoveTransparencyOperation(hexColor string) RemoveTransparencyOperation {
-	return RemoveTransparencyOperation{Type: "remove_transparency", HexColor: hexColor}
-}
-
-type ThresholdOperation struct {
-	Type        string `json:"type"`
-	Value       int    `json:"value"`
-	IsGrayscale bool   `json:"is_grayscale"`
-}
-
-func (ThresholdOperation) isTransformOperation() {}
-
-func NewThresholdOperation(value int, isGrayscale bool) ThresholdOperation {
-	return ThresholdOperation{Type: "threshold", Value: value, IsGrayscale: isGrayscale}
-}
-
-type DenoiseOperation struct {
-	Type string `json:"type"`
-	Size int    `json:"size"`
-}
-
-func (DenoiseOperation) isTransformOperation() {}
-
-func NewDenoiseOperation(size int) DenoiseOperation {
-	return DenoiseOperation{Type: "denoise", Size: size}
-}
-
-type OpacityOperation struct {
-	Type             string `json:"type"`
-	OpacityInPercent int    `json:"opacity_in_percent"`
-}
-
-func (OpacityOperation) isTransformOperation() {}
-
-func NewOpacityOperation(opacityInPercent int) OpacityOperation {
-	return OpacityOperation{Type: "opacity", OpacityInPercent: opacityInPercent}
-}
-
-type ConvertOperation struct {
-	Type    string `json:"type"`
-	Format  string `json:"format"`
-	Quality *int   `json:"quality,omitempty"`
-}
-
-func (ConvertOperation) isTransformOperation() {}
-
-func NewConvertOperation(format string) ConvertOperation {
-	return ConvertOperation{Type: "convert", Format: format}
-}
-
-type UpscaleOperation struct {
-	Type   string `json:"type"`
-	Factor int    `json:"factor"`
-}
-
-func (UpscaleOperation) isTransformOperation() {}
-
-func NewUpscaleOperation(factor int) UpscaleOperation {
-	return UpscaleOperation{Type: "upscale", Factor: factor}
-}
-
-type SmartCropOperation struct {
-	Type       string `json:"type"`
-	WidthInPx  int    `json:"width_in_px"`
-	HeightInPx int    `json:"height_in_px"`
-}
-
-func (SmartCropOperation) isTransformOperation() {}
-
-func NewSmartCropOperation(widthInPx int, heightInPx int) SmartCropOperation {
-	return SmartCropOperation{Type: "smart_crop", WidthInPx: widthInPx, HeightInPx: heightInPx}
-}
-
-type CompressToSizeOperation struct {
-	Type               string `json:"type"`
-	MaxFileSizeInBytes int    `json:"max_file_size_in_bytes"`
-}
-
-func (CompressToSizeOperation) isTransformOperation() {}
-
-func NewCompressToSizeOperation(maxFileSizeInBytes int) CompressToSizeOperation {
-	return CompressToSizeOperation{Type: "compress_to_size", MaxFileSizeInBytes: maxFileSizeInBytes}
-}
-
-type RemoveBackgroundOperation struct {
-	Type               string `json:"type"`
-	BackgroundHexColor string `json:"background_hex_color,omitempty"`
-}
-
-func (RemoveBackgroundOperation) isTransformOperation() {}
-
-func NewRemoveBackgroundOperation() RemoveBackgroundOperation {
-	return RemoveBackgroundOperation{Type: "remove_background"}
-}
-
-// ── Image Generation ───────────────────────────────────────────────────────
-
-type Dimensions struct {
-	WidthInPx  int `json:"width_in_px"`
-	HeightInPx int `json:"height_in_px"`
-}
-
-type Position struct {
-	XInPx float64 `json:"x_in_px"`
-	YInPx float64 `json:"y_in_px"`
-}
-
 type AngledEdge struct {
-	Edge           string  `json:"edge"`
+	// AngleInDegrees Angle in degrees, from -45 to 45.
 	AngleInDegrees float64 `json:"angle_in_degrees"`
+	// Edge Which edge to angle.
+	Edge string `json:"edge"`
 }
-
+type ArrayFieldConfig struct {
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// Fields List of field configurations defining the schema for each item in the array.
+	Fields []any `json:"fields"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'ARRAY' for a repeating list of structured items.
+	Type string `json:"type"`
+}
+type AutoContrastOperation struct {
+	// Type Must be 'auto_contrast'.
+	Type string `json:"type"`
+}
+type BarcodeBlock struct {
+	// BgHexColor Background color as a 6-digit hex code.
+	BgHexColor string `json:"bg_hex_color,omitempty"`
+	// FgHexColor Foreground (bar) color as a 6-digit hex code.
+	FgHexColor string `json:"fg_hex_color,omitempty"`
+	// Format Barcode format.
+	Format string `json:"format"`
+	// HeightInPt Height in points. Must be >= 1.
+	HeightInPt float64 `json:"height_in_pt"`
+	// Type Must be 'barcode'.
+	Type string `json:"type"`
+	// Value Data to encode in the barcode.
+	Value string `json:"value"`
+	// WidthInPt Width in points. Must be >= 1.
+	WidthInPt float64 `json:"width_in_pt"`
+}
+type BarcodeLayer struct {
+	// BackgroundHexColor Background color as a 6-digit hex code.
+	BackgroundHexColor string `json:"background_hex_color"`
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions"`
+	// ForegroundHexColor Bar color as a 6-digit hex code.
+	ForegroundHexColor string `json:"foreground_hex_color"`
+	// Format Barcode format.
+	Format string `json:"format"`
+	// Index Z-order index of this layer. Must be >= 0.
+	Index int `json:"index"`
+	// Opacity Layer opacity from 0 (transparent) to 100 (opaque). Defaults to 100.
+	Opacity int `json:"opacity,omitempty"`
+	// Position defines the position.
+	Position Position `json:"position"`
+	// RotationInDegrees Rotation angle in degrees, from -180 to 180.
+	RotationInDegrees float64 `json:"rotation_in_degrees,omitempty"`
+	// Type Must be 'barcode'.
+	Type string `json:"type"`
+	// Value Data to encode in the barcode.
+	Value string `json:"value"`
+}
+type BlurOperation struct {
+	// Sigma Gaussian blur radius. Must be > 0.
+	Sigma float64 `json:"sigma"`
+	// Type Must be 'blur'.
+	Type string `json:"type"`
+}
+type BooleanFieldConfig struct {
+	// DefaultValue Default boolean value if the field is not found in the document.
+	DefaultValue bool `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'BOOLEAN' for a true/false field.
+	Type string `json:"type"`
+}
+type BorderStyle struct {
+	// Color Border color as a 6-digit hex code.
+	Color string `json:"color"`
+	// WidthInPt Border width in points. Must be >= 0.
+	WidthInPt float64 `json:"width_in_pt"`
+}
+type BorderStyleOverrides struct {
+	// Color Override border color as a 6-digit hex code.
+	Color string `json:"color,omitempty"`
+	// WidthInPt Override border width in points. Must be >= 0.
+	WidthInPt float64 `json:"width_in_pt,omitempty"`
+}
+type CalculatedFieldConfig struct {
+	// Description Human-readable description guiding the AI on what this calculated field represents.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Operation Arithmetic operation to apply to the source fields.
+	Operation string `json:"operation"`
+	// SourceFieldNames Ordered list of field names whose values are used as operands.
+	SourceFieldNames []string `json:"source_field_names"`
+	// Type Must be 'CALCULATED' for a field whose value is computed from other fields.
+	Type string `json:"type"`
+	// Unit Unit of measurement for the result (e.g., 'EUR', 'kg').
+	Unit string `json:"unit,omitempty"`
+}
+type CellStyle struct {
+	// BackgroundColor Cell background color as a 6-digit hex code.
+	BackgroundColor string `json:"background_color,omitempty"`
+	// FontColor Text color as a 6-digit hex code.
+	FontColor string `json:"font_color,omitempty"`
+	// FontFamily Font family name for the cell text.
+	FontFamily string `json:"font_family,omitempty"`
+	// FontSizeInPt Font size in points. Must be >= 1.
+	FontSizeInPt float64 `json:"font_size_in_pt,omitempty"`
+	// HorizontalAlignment Horizontal text alignment within the cell.
+	HorizontalAlignment string `json:"horizontal_alignment,omitempty"`
+	// IsBold Whether the text is bold.
+	IsBold bool `json:"is_bold,omitempty"`
+	// IsItalic Whether the text is italic.
+	IsItalic bool `json:"is_italic,omitempty"`
+	// NumberFormat Number format pattern (e.g., '#,##0.00' or '0%').
+	NumberFormat string `json:"number_format,omitempty"`
+}
+type Column struct {
+	// Name Column header name. Must not be empty.
+	Name string `json:"name"`
+	// Width Column width as a fraction. Must be > 0.
+	Width float64 `json:"width,omitempty"`
+}
+type CompressToSizeOperation struct {
+	// MaxFileSizeInBytes Target maximum file size in bytes. Must be > 0.
+	MaxFileSizeInBytes int `json:"max_file_size_in_bytes"`
+	// Type Must be 'compress_to_size'.
+	Type string `json:"type"`
+}
+type ConvertOperation struct {
+	// Format Target image format.
+	Format string `json:"format"`
+	// Quality Compression quality from 1 (lowest) to 100 (highest).
+	Quality int `json:"quality,omitempty"`
+	// Type Must be 'convert'.
+	Type string `json:"type"`
+}
+type CountryFieldConfig struct {
+	// DefaultValue Default ISO 3166-1 alpha-2 country code if the field is not found in the document.
+	DefaultValue string `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'COUNTRY' for an ISO 3166-1 alpha-2 country code field.
+	Type string `json:"type"`
+}
+type CropOperation struct {
+	// HeightInPx Height of the crop area in pixels. Must be > 0.
+	HeightInPx int `json:"height_in_px"`
+	// LeftInPx Left offset in pixels for the crop area. Must be >= 0.
+	LeftInPx int `json:"left_in_px"`
+	// TopInPx Top offset in pixels for the crop area. Must be >= 0.
+	TopInPx int `json:"top_in_px"`
+	// Type Must be 'crop'.
+	Type string `json:"type"`
+	// WidthInPx Width of the crop area in pixels. Must be > 0.
+	WidthInPx int `json:"width_in_px"`
+}
+type CurrencyAmountFieldConfig struct {
+	// DecimalPoints Number of decimal places for the amount. Must be >= 0.
+	DecimalPoints int `json:"decimal_points,omitempty"`
+	// DefaultValue Default amount if the field is not found in the document.
+	DefaultValue float64 `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Max Maximum allowed amount (inclusive).
+	Max float64 `json:"max,omitempty"`
+	// Min Minimum allowed amount (inclusive).
+	Min float64 `json:"min,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'CURRENCY_AMOUNT' for a monetary amount field.
+	Type string `json:"type"`
+}
+type CurrencyCodeFieldConfig struct {
+	// DefaultValue Default ISO 4217 currency code if the field is not found in the document.
+	DefaultValue string `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'CURRENCY_CODE' for an ISO 4217 currency code field.
+	Type string `json:"type"`
+}
+type DateFieldConfig struct {
+	// AllowFutureDates Whether dates in the future are accepted.
+	AllowFutureDates bool `json:"allow_future_dates,omitempty"`
+	// AllowPastDates Whether dates in the past are accepted.
+	AllowPastDates bool `json:"allow_past_dates,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'DATE' for a date field (YYYY-MM-DD).
+	Type string `json:"type"`
+}
+type DatetimeFieldConfig struct {
+	// AllowFutureDates Whether date-times in the future are accepted.
+	AllowFutureDates bool `json:"allow_future_dates,omitempty"`
+	// AllowPastDates Whether date-times in the past are accepted.
+	AllowPastDates bool `json:"allow_past_dates,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'DATETIME' for a date-time field (ISO 8601).
+	Type string `json:"type"`
+}
+type DecimalFieldConfig struct {
+	// DecimalPoints Number of decimal places to round to. Must be >= 0.
+	DecimalPoints int `json:"decimal_points,omitempty"`
+	// DefaultValue Default decimal value if the field is not found in the document.
+	DefaultValue float64 `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Max Maximum allowed value (inclusive).
+	Max float64 `json:"max,omitempty"`
+	// Min Minimum allowed value (inclusive).
+	Min float64 `json:"min,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'DECIMAL' for a decimal number field.
+	Type string `json:"type"`
+	// Unit Unit of measurement for context (e.g., 'EUR', 'mm').
+	Unit string `json:"unit,omitempty"`
+}
+type DenoiseOperation struct {
+	// Size Noise-reduction filter window size. Must be > 0.
+	Size int `json:"size"`
+	// Type Must be 'denoise'.
+	Type string `json:"type"`
+}
+type Dimensions struct {
+	// HeightInPx Height in pixels. Must be >= 1.
+	HeightInPx int `json:"height_in_px"`
+	// WidthInPx Width in pixels. Must be >= 1.
+	WidthInPx int `json:"width_in_px"`
+}
+type DocumentGenerationRequest struct {
+	// Document defines the document.
+	Document any `json:"document"`
+	// Format defines the format.
+	Format string `json:"format"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
+}
+type DocumentStyles struct {
+	// Grid defines the grid.
+	Grid GridStyle `json:"grid"`
+	// Headline defines the headline.
+	Headline HeadlineStyle `json:"headline"`
+	// Image defines the image.
+	Image ImageStyle `json:"image"`
+	// Link defines the link.
+	Link LinkStyle `json:"link"`
+	// List defines the list.
+	List ListStyle `json:"list"`
+	// Separator defines the separator.
+	Separator SeparatorStyle `json:"separator"`
+	// Table defines the table.
+	Table TableStyle `json:"table"`
+	// Text defines the text.
+	Text TextStyle `json:"text"`
+}
+type DocumentToMarkdownSuccessResponse struct {
+	// Data Converted document result with name, mime_type, markdown, optional image description, and optional nested_files.
+	Data any `json:"data"`
+	// Metadata defines the metadata.
+	Metadata WebsiteMetadata `json:"metadata,omitempty"`
+	// Success defines the success.
+	Success any `json:"success"`
+}
+type EmailFieldConfig struct {
+	// DefaultValue Default email address if the field is not found in the document.
+	DefaultValue string `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'EMAIL' for an email address field.
+	Type string `json:"type"`
+}
+type EnumFieldConfig struct {
+	// DefaultValue Default selected values if the field is not found in the document.
+	DefaultValue []string `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// MaxSelected Maximum number of values that can be selected. Must be > 0.
+	MaxSelected int `json:"max_selected,omitempty"`
+	// MinSelected Minimum number of values that must be selected. Must be >= 0.
+	MinSelected int `json:"min_selected,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'ENUM' for a field with predefined allowed values.
+	Type string `json:"type"`
+	// Values List of allowed enum values the AI can choose from.
+	Values []string `json:"values"`
+}
+type ExtendOperation struct {
+	// BottomInPx Pixels to add at the bottom. Must be >= 0.
+	BottomInPx int `json:"bottom_in_px"`
+	// HexColor Fill color for extended area as a 6-digit hex code (e.g., '#FF0000').
+	HexColor string `json:"hex_color"`
+	// LeftInPx Pixels to add on the left. Must be >= 0.
+	LeftInPx int `json:"left_in_px"`
+	// RightInPx Pixels to add on the right. Must be >= 0.
+	RightInPx int `json:"right_in_px"`
+	// TopInPx Pixels to add at the top. Must be >= 0.
+	TopInPx int `json:"top_in_px"`
+	// Type Must be 'extend'.
+	Type string `json:"type"`
+}
+type ExtractionSchema struct {
+	// Fields defines the fields.
+	Fields []any `json:"fields"`
+}
+type FetchOptions struct {
+	// Auth Optional website authentication. Supports bearer, basic, and custom_header auth. Secret values are never returned in metadata.
+	Auth any `json:"auth,omitempty"`
+	// Headers Optional custom request headers sent to the target website. Unsafe hop-by-hop, cookie, and browser-controlled headers are rejected.
+	Headers any `json:"headers,omitempty"`
+	// Locale BCP 47 locale tag sent as Accept-Language header (e.g., "en-US", "de-DE", "fr").
+	Locale string `json:"locale,omitempty"`
+	// ShouldRenderJavascript When true, render the page in Chromium before extracting content.
+	ShouldRenderJavascript bool `json:"should_render_javascript,omitempty"`
+	// TimeoutMs Maximum fetch timeout in milliseconds. Must be between 1000 and 60000.
+	TimeoutMs int `json:"timeout_ms,omitempty"`
+	// UserAgent Custom User-Agent header string (1–500 characters).
+	UserAgent string `json:"user_agent,omitempty"`
+}
+type FileInput struct {
+	// Base64 Base64-encoded file content. Required when type is 'base64'.
+	Base64 []byte `json:"base64,omitempty"`
+	// FetchOptions defines the fetch options.
+	FetchOptions FetchOptions `json:"fetch_options,omitempty"`
+	// Name Optional file name including extension (e.g., 'invoice.pdf'). Used for format detection for direct files.
+	Name string `json:"name,omitempty"`
+	// Type Input type: 'base64' for inline Base64-encoded data, 'url' for a remote file URL.
+	Type string `json:"type"`
+	// Url URL to fetch the file from. Required when type is 'url'.
+	Url string `json:"url,omitempty"`
+}
+type FlipOperation struct {
+	// Type Must be 'flip'. Mirrors the image vertically (top to bottom).
+	Type string `json:"type"`
+}
+type FlopOperation struct {
+	// Type Must be 'flop'. Mirrors the image horizontally (left to right).
+	Type string `json:"type"`
+}
+type FontDefinition struct {
+	// File defines the file.
+	File FileInput `json:"file"`
+	// Name Font family name to reference in text layers.
+	Name string `json:"name"`
+	// Style Font style: 'normal' or 'italic'.
+	Style string `json:"style"`
+	// Weight Font weight identifier (e.g., 'regular', 'bold').
+	Weight string `json:"weight"`
+}
+type GammaOperation struct {
+	// Gamma Gamma correction factor. Must be > 0. Values < 1 darken, > 1 brighten.
+	Gamma float64 `json:"gamma"`
+	// Type Must be 'gamma'.
+	Type string `json:"type"`
+}
 type GradientColorStop struct {
-	HexColor string  `json:"hex_color"`
+	// HexColor Color at this gradient stop as a 6-digit hex code.
+	HexColor string `json:"hex_color"`
+	// Position Position along the gradient from 0 (start) to 100 (end).
 	Position float64 `json:"position"`
 }
-
-type ImageFontDefinition struct {
-	Name   string    `json:"name"`
-	Weight string    `json:"weight"`
-	Style  string    `json:"style"`
-	File   FileInput `json:"file"`
-}
-
-type SolidColorBackgroundLayer struct {
-	Type     string `json:"type"`
-	Index    int    `json:"index"`
-	HexColor string `json:"hex_color"`
-	Opacity  *int   `json:"opacity,omitempty"`
-}
-
-func (SolidColorBackgroundLayer) isLayer() {}
-
-func NewSolidColorBackgroundLayer(index int, hexColor string) SolidColorBackgroundLayer {
-	return SolidColorBackgroundLayer{Type: "solid-color", Index: index, HexColor: hexColor}
-}
-
-type SolidColorLayer struct {
-	Type                    string       `json:"type"`
-	Index                   int          `json:"index"`
-	HexColor                string       `json:"hex_color"`
-	Position                Position     `json:"position"`
-	Dimensions              Dimensions   `json:"dimensions"`
-	RotationInDegrees       *float64     `json:"rotation_in_degrees,omitempty"`
-	Opacity                 *int         `json:"opacity,omitempty"`
-	AngledEdges             []AngledEdge `json:"angled_edges,omitempty"`
-	BorderRadius            *int         `json:"border_radius,omitempty"`
-	BorderTopLeftRadius     *int         `json:"border_top_left_radius,omitempty"`
-	BorderTopRightRadius    *int         `json:"border_top_right_radius,omitempty"`
-	BorderBottomLeftRadius  *int         `json:"border_bottom_left_radius,omitempty"`
-	BorderBottomRightRadius *int         `json:"border_bottom_right_radius,omitempty"`
-}
-
-func (SolidColorLayer) isLayer() {}
-
-func NewSolidColorLayer(index int, hexColor string, position Position, dimensions Dimensions) SolidColorLayer {
-	return SolidColorLayer{Type: "solid-color", Index: index, HexColor: hexColor, Position: position, Dimensions: dimensions}
-}
-
-type TextLayer struct {
-	Type                 string     `json:"type"`
-	Index                int        `json:"index"`
-	Text                 string     `json:"text"`
-	FontName             string     `json:"font_name"`
-	FontSizeInPx         int        `json:"font_size_in_px"`
-	TextColor            string     `json:"text_color"`
-	Position             Position   `json:"position"`
-	Dimensions           Dimensions `json:"dimensions"`
-	FontWeight           string     `json:"font_weight,omitempty"`
-	FontStyle            string     `json:"font_style,omitempty"`
-	TextAlign            string     `json:"text_align,omitempty"`
-	VerticalAlign        string     `json:"vertical_align,omitempty"`
-	IsSplittingLines     *bool      `json:"is_splitting_lines,omitempty"`
-	ParagraphSpacingInPx *int       `json:"paragraph_spacing_in_px,omitempty"`
-	ShouldAutoScale      *bool      `json:"should_auto_scale,omitempty"`
-	RotationInDegrees    *float64   `json:"rotation_in_degrees,omitempty"`
-	Opacity              *int       `json:"opacity,omitempty"`
-}
-
-func (TextLayer) isLayer() {}
-
-func NewTextLayer(index int, text string, fontName string, fontSizeInPx int, textColor string, position Position, dimensions Dimensions) TextLayer {
-	return TextLayer{Type: "text", Index: index, Text: text, FontName: fontName, FontSizeInPx: fontSizeInPx, TextColor: textColor, Position: position, Dimensions: dimensions}
-}
-
-type ImageLayer struct {
-	Type                    string     `json:"type"`
-	Index                   int        `json:"index"`
-	File                    FileInput  `json:"file"`
-	Position                Position   `json:"position"`
-	Dimensions              Dimensions `json:"dimensions"`
-	RotationInDegrees       *float64   `json:"rotation_in_degrees,omitempty"`
-	Opacity                 *int       `json:"opacity,omitempty"`
-	ShouldUseSmartCropping  *bool      `json:"should_use_smart_cropping,omitempty"`
-	ShouldRemoveBackground  *bool      `json:"should_remove_background,omitempty"`
-	BorderRadius            *int       `json:"border_radius,omitempty"`
-	BorderTopLeftRadius     *int       `json:"border_top_left_radius,omitempty"`
-	BorderTopRightRadius    *int       `json:"border_top_right_radius,omitempty"`
-	BorderBottomLeftRadius  *int       `json:"border_bottom_left_radius,omitempty"`
-	BorderBottomRightRadius *int       `json:"border_bottom_right_radius,omitempty"`
-}
-
-func (ImageLayer) isLayer() {}
-
-func NewImageLayer(index int, file FileInput, position Position, dimensions Dimensions) ImageLayer {
-	return ImageLayer{Type: "image", Index: index, File: file, Position: position, Dimensions: dimensions}
-}
-
-type ImageBackgroundLayer struct {
-	Type                   string    `json:"type"`
-	Index                  int       `json:"index"`
-	File                   FileInput `json:"file"`
-	Opacity                *int      `json:"opacity,omitempty"`
-	ShouldUseSmartCropping *bool     `json:"should_use_smart_cropping,omitempty"`
-}
-
-func (ImageBackgroundLayer) isLayer() {}
-
-func NewImageBackgroundLayer(index int, file FileInput) ImageBackgroundLayer {
-	return ImageBackgroundLayer{Type: "image", Index: index, File: file}
-}
-
-type QrCodeLayer struct {
-	Type               string     `json:"type"`
-	Index              int        `json:"index"`
-	Value              string     `json:"value"`
-	ForegroundHexColor string     `json:"foreground_hex_color"`
-	BackgroundHexColor string     `json:"background_hex_color"`
-	Position           Position   `json:"position"`
-	Dimensions         Dimensions `json:"dimensions"`
-	RotationInDegrees  *float64   `json:"rotation_in_degrees,omitempty"`
-	Opacity            *int       `json:"opacity,omitempty"`
-}
-
-func (QrCodeLayer) isLayer() {}
-
-func NewQrCodeLayer(index int, value string, fgColor string, bgColor string, position Position, dimensions Dimensions) QrCodeLayer {
-	return QrCodeLayer{Type: "qr-code", Index: index, Value: value, ForegroundHexColor: fgColor, BackgroundHexColor: bgColor, Position: position, Dimensions: dimensions}
-}
-
-type BarcodeLayer struct {
-	Type               string     `json:"type"`
-	Index              int        `json:"index"`
-	Value              string     `json:"value"`
-	Format             string     `json:"format"`
-	ForegroundHexColor string     `json:"foreground_hex_color"`
-	BackgroundHexColor string     `json:"background_hex_color"`
-	Position           Position   `json:"position"`
-	Dimensions         Dimensions `json:"dimensions"`
-	RotationInDegrees  *float64   `json:"rotation_in_degrees,omitempty"`
-	Opacity            *int       `json:"opacity,omitempty"`
-}
-
-func (BarcodeLayer) isLayer() {}
-
-func NewBarcodeLayer(index int, value string, format string, fgColor string, bgColor string, position Position, dimensions Dimensions) BarcodeLayer {
-	return BarcodeLayer{Type: "barcode", Index: index, Value: value, Format: format, ForegroundHexColor: fgColor, BackgroundHexColor: bgColor, Position: position, Dimensions: dimensions}
-}
-
 type GradientLayer struct {
-	Type                    string              `json:"type"`
-	Index                   int                 `json:"index"`
-	GradientType            string              `json:"gradient_type"`
-	Colors                  []GradientColorStop `json:"colors"`
-	Position                Position            `json:"position"`
-	Dimensions              Dimensions          `json:"dimensions"`
-	AngleInDegrees          *float64            `json:"angle_in_degrees,omitempty"`
-	RotationInDegrees       *float64            `json:"rotation_in_degrees,omitempty"`
-	Opacity                 *int                `json:"opacity,omitempty"`
-	BorderRadius            *int                `json:"border_radius,omitempty"`
-	BorderTopLeftRadius     *int                `json:"border_top_left_radius,omitempty"`
-	BorderTopRightRadius    *int                `json:"border_top_right_radius,omitempty"`
-	BorderBottomLeftRadius  *int                `json:"border_bottom_left_radius,omitempty"`
-	BorderBottomRightRadius *int                `json:"border_bottom_right_radius,omitempty"`
-}
-
-func (GradientLayer) isLayer() {}
-
-func NewGradientLayer(index int, gradientType string, colors []GradientColorStop, position Position, dimensions Dimensions) GradientLayer {
-	return GradientLayer{Type: "gradient", Index: index, GradientType: gradientType, Colors: colors, Position: position, Dimensions: dimensions}
-}
-
-type LayoutLayer struct {
-	Type                    string      `json:"type"`
-	Index                   int         `json:"index"`
-	Layers                  []Layer     `json:"layers"`
-	Direction               string      `json:"direction,omitempty"`
-	Gap                     *int        `json:"gap,omitempty"`
-	HorizontalAlignment     string      `json:"horizontal_alignment,omitempty"`
-	VerticalAlignment       string      `json:"vertical_alignment,omitempty"`
-	Position                *Position   `json:"position,omitempty"`
-	Dimensions              *Dimensions `json:"dimensions,omitempty"`
-	Opacity                 *int        `json:"opacity,omitempty"`
-	BackgroundColor         string      `json:"background_color,omitempty"`
-	BackgroundLayers        []Layer     `json:"background_layers,omitempty"`
-	Padding                 *int        `json:"padding,omitempty"`
-	PaddingTop              *int        `json:"padding_top,omitempty"`
-	PaddingRight            *int        `json:"padding_right,omitempty"`
-	PaddingBottom           *int        `json:"padding_bottom,omitempty"`
-	PaddingLeft             *int        `json:"padding_left,omitempty"`
-	BorderRadius            *int        `json:"border_radius,omitempty"`
-	BorderTopLeftRadius     *int        `json:"border_top_left_radius,omitempty"`
-	BorderTopRightRadius    *int        `json:"border_top_right_radius,omitempty"`
-	BorderBottomLeftRadius  *int        `json:"border_bottom_left_radius,omitempty"`
-	BorderBottomRightRadius *int        `json:"border_bottom_right_radius,omitempty"`
-}
-
-func (LayoutLayer) isLayer() {}
-
-func NewLayoutLayer(index int, layers []Layer) LayoutLayer {
-	return LayoutLayer{Type: "layout", Index: index, Layers: layers}
-}
-
-// ── Document Generation ────────────────────────────────────────────────────
-
-type DocumentMetadata struct {
-	Title    string `json:"title"`
-	Author   string `json:"author,omitempty"`
-	Language string `json:"language,omitempty"`
-}
-
-type DocPageSize struct {
-	Preset     string   `json:"preset,omitempty"`
-	WidthInPt  *float64 `json:"width_in_pt,omitempty"`
-	HeightInPt *float64 `json:"height_in_pt,omitempty"`
-}
-
-type DocMargins struct {
-	TopInPt    float64 `json:"top_in_pt"`
-	RightInPt  float64 `json:"right_in_pt"`
-	BottomInPt float64 `json:"bottom_in_pt"`
-	LeftInPt   float64 `json:"left_in_pt"`
-}
-
-type DocumentPage struct {
-	Size            DocPageSize `json:"size"`
-	Margins         DocMargins  `json:"margins"`
-	BackgroundColor string      `json:"background_color,omitempty"`
-}
-
-type DocumentFontDefinition struct {
-	Name   string `json:"name"`
-	Weight string `json:"weight"`
-	Style  string `json:"style"`
-	Buffer string `json:"buffer"`
-}
-
-type TextStyle struct {
-	FontFamily   string  `json:"font_family"`
-	FontSizeInPt float64 `json:"font_size_in_pt"`
-	LineHeight   float64 `json:"line_height"`
-	Color        string  `json:"color"`
-	FontWeight   string  `json:"font_weight,omitempty"`
-	IsItalic     *bool   `json:"is_italic,omitempty"`
-}
-
-type HeadlineStyle struct {
-	FontFamily        string  `json:"font_family"`
-	FontSizeInPt      float64 `json:"font_size_in_pt"`
-	Color             string  `json:"color"`
-	SpacingBeforeInPt float64 `json:"spacing_before_in_pt"`
-	SpacingAfterInPt  float64 `json:"spacing_after_in_pt"`
-	FontWeight        string  `json:"font_weight,omitempty"`
-	IsItalic          *bool   `json:"is_italic,omitempty"`
-}
-
-type LinkStyle struct {
-	Color        string `json:"color"`
-	IsUnderlined *bool  `json:"is_underlined,omitempty"`
-}
-
-type ListStyle struct {
-	MarkerColor   string    `json:"marker_color"`
-	MarkerGapInPt float64   `json:"marker_gap_in_pt"`
-	TextStyle     TextStyle `json:"text_style"`
-}
-
-type TableHeaderStyle struct {
-	BackgroundColor string  `json:"background_color"`
-	TextColor       string  `json:"text_color"`
-	FontSizeInPt    float64 `json:"font_size_in_pt"`
-	FontWeight      string  `json:"font_weight,omitempty"`
-}
-
-type TableBodyStyle struct {
-	BackgroundColor string  `json:"background_color"`
-	TextColor       string  `json:"text_color"`
-	FontSizeInPt    float64 `json:"font_size_in_pt"`
-}
-
-type TableBorderSide struct {
-	Color     string  `json:"color"`
-	WidthInPt float64 `json:"width_in_pt"`
-}
-
-type TableBorderGroup struct {
-	Horizontal *TableBorderSide `json:"horizontal,omitempty"`
-	Vertical   *TableBorderSide `json:"vertical,omitempty"`
-	Top        *TableBorderSide `json:"top,omitempty"`
-	Right      *TableBorderSide `json:"right,omitempty"`
-	Bottom     *TableBorderSide `json:"bottom,omitempty"`
-	Left       *TableBorderSide `json:"left,omitempty"`
-}
-
-type TableBorderStyle struct {
-	Outer *TableBorderGroup `json:"outer,omitempty"`
-	Inner *TableBorderGroup `json:"inner,omitempty"`
-}
-
-type TableStyle struct {
-	Header TableHeaderStyle  `json:"header"`
-	Body   TableBodyStyle    `json:"body"`
-	Border *TableBorderStyle `json:"border,omitempty"`
-}
-
-type BorderStyle struct {
-	Color     string  `json:"color"`
-	WidthInPt float64 `json:"width_in_pt"`
-}
-
-type TableStyleOverrides struct {
-	Header *TableHeaderStyle `json:"header,omitempty"`
-	Body   *TableBodyStyle   `json:"body,omitempty"`
-	Border *TableBorderStyle `json:"border,omitempty"`
-}
-
-type GridStyle struct {
-	BackgroundColor string  `json:"background_color"`
-	BorderColor     string  `json:"border_color"`
-	BorderWidthInPt float64 `json:"border_width_in_pt"`
-	GapInPt         float64 `json:"gap_in_pt"`
-}
-
-type SeparatorStyle struct {
-	Color             string  `json:"color"`
-	ThicknessInPt     float64 `json:"thickness_in_pt"`
-	SpacingBeforeInPt float64 `json:"spacing_before_in_pt"`
-	SpacingAfterInPt  float64 `json:"spacing_after_in_pt"`
-}
-
-type ImageStyle struct {
-	BorderColor     string  `json:"border_color"`
-	BorderWidthInPt float64 `json:"border_width_in_pt"`
-}
-
-type DocumentStyles struct {
-	Text      TextStyle      `json:"text"`
-	Headline  HeadlineStyle  `json:"headline"`
-	Link      LinkStyle      `json:"link"`
-	List      ListStyle      `json:"list"`
-	Table     TableStyle     `json:"table"`
-	Grid      GridStyle      `json:"grid"`
-	Separator SeparatorStyle `json:"separator"`
-	Image     ImageStyle     `json:"image"`
-}
-
-type HeadlineTableOfContents struct {
-	IsIncluded    *bool  `json:"is_included,omitempty"`
-	LabelOverride string `json:"label_override,omitempty"`
-	LevelOverride string `json:"level_override,omitempty"`
-}
-
-type TableCellStyle struct {
-	BackgroundColor string  `json:"background_color,omitempty"`
-	TextColor       string  `json:"text_color,omitempty"`
-	FontSizeInPt    float64 `json:"font_size_in_pt,omitempty"`
-	FontWeight      string  `json:"font_weight,omitempty"`
-	IsItalic        *bool   `json:"is_italic,omitempty"`
-}
-
-// ── Content Blocks ─────────────────────────────────────────────────────────
-
-type ParagraphRun struct {
-	Text       string `json:"text"`
-	FontWeight string `json:"font_weight,omitempty"`
-	IsItalic   *bool  `json:"is_italic,omitempty"`
-	LinkURL    string `json:"link_url,omitempty"`
-}
-
-type ParagraphBlock struct {
-	Type          string         `json:"type"`
-	Markdown      string         `json:"markdown,omitempty"`
-	TextAlignment string         `json:"text_alignment,omitempty"`
-	Runs          []ParagraphRun `json:"runs,omitempty"`
-	Styles        *TextStyle     `json:"styles,omitempty"`
-}
-
-func (ParagraphBlock) isContentBlock()      {}
-func (ParagraphBlock) isHeaderFooterBlock() {}
-
-func NewParagraphBlock() ParagraphBlock {
-	return ParagraphBlock{Type: "paragraph"}
-}
-
-type HeadlineBlock struct {
-	Type            string                   `json:"type"`
-	Level           string                   `json:"level"`
-	Text            string                   `json:"text"`
-	Styles          *HeadlineStyle           `json:"styles,omitempty"`
-	TableOfContents *HeadlineTableOfContents `json:"table_of_contents,omitempty"`
-}
-
-func (HeadlineBlock) isContentBlock()      {}
-func (HeadlineBlock) isHeaderFooterBlock() {}
-
-func NewHeadlineBlock(level string, text string) HeadlineBlock {
-	return HeadlineBlock{Type: "headline", Level: level, Text: text}
-}
-
-type ImageBlock struct {
-	Type       string      `json:"type"`
-	Buffer     string      `json:"buffer"`
-	WidthInPt  float64     `json:"width_in_pt"`
-	HeightInPt float64     `json:"height_in_pt"`
-	Fit        string      `json:"fit,omitempty"`
-	Styles     *ImageStyle `json:"styles,omitempty"`
-}
-
-func (ImageBlock) isContentBlock()      {}
-func (ImageBlock) isHeaderFooterBlock() {}
-
-func NewImageBlock(buffer string, widthInPt float64, heightInPt float64) ImageBlock {
-	return ImageBlock{Type: "image", Buffer: buffer, WidthInPt: widthInPt, HeightInPt: heightInPt}
-}
-
-type TableCell struct {
-	Text                string          `json:"text"`
-	HorizontalAlignment string          `json:"horizontal_alignment,omitempty"`
-	ColumnSpan          *int            `json:"column_span,omitempty"`
-	RowSpan             *int            `json:"row_span,omitempty"`
-	Styles              *TableCellStyle `json:"styles,omitempty"`
-}
-
-type TableRow struct {
-	Cells []TableCell `json:"cells"`
-}
-
-type TableBlock struct {
-	Type                  string               `json:"type"`
-	Rows                  []TableRow           `json:"rows"`
-	Header                *TableRow            `json:"header,omitempty"`
-	ColumnWidthsInPercent []float64            `json:"column_widths_in_percent,omitempty"`
-	Styles                *TableStyleOverrides `json:"styles,omitempty"`
-}
-
-func (TableBlock) isContentBlock()      {}
-func (TableBlock) isHeaderFooterBlock() {}
-
-func NewTableBlock(rows []TableRow) TableBlock {
-	return TableBlock{Type: "table", Rows: rows}
-}
-
-type GridColumn struct {
-	ColumnSpan          int            `json:"column_span"`
-	Blocks              []ContentBlock `json:"blocks"`
-	HorizontalAlignment string         `json:"horizontal_alignment,omitempty"`
-	VerticalAlignment   string         `json:"vertical_alignment,omitempty"`
-}
-
-type GridBlock struct {
-	Type                string       `json:"type"`
-	Columns             []GridColumn `json:"columns"`
-	HorizontalAlignment string       `json:"horizontal_alignment,omitempty"`
-	VerticalAlignment   string       `json:"vertical_alignment,omitempty"`
-	Styles              *GridStyle   `json:"styles,omitempty"`
-}
-
-func (GridBlock) isContentBlock()      {}
-func (GridBlock) isHeaderFooterBlock() {}
-
-func NewGridBlock(columns []GridColumn) GridBlock {
-	return GridBlock{Type: "grid", Columns: columns}
-}
-
-type ListItem struct {
-	Text string `json:"text"`
-}
-
-type ListBlock struct {
-	Type    string     `json:"type"`
-	Variant string     `json:"variant"`
-	Items   []ListItem `json:"items"`
-	Styles  *ListStyle `json:"styles,omitempty"`
-}
-
-func (ListBlock) isContentBlock()      {}
-func (ListBlock) isHeaderFooterBlock() {}
-
-func NewListBlock(variant string, items []ListItem) ListBlock {
-	return ListBlock{Type: "list", Variant: variant, Items: items}
-}
-
-type TableOfContentsBlock struct {
-	Type          string     `json:"type"`
-	Levels        []string   `json:"levels"`
-	Leader        string     `json:"leader"`
-	TextAlignment string     `json:"text_alignment,omitempty"`
-	Styles        *TextStyle `json:"styles,omitempty"`
-}
-
-func (TableOfContentsBlock) isContentBlock() {}
-
-func NewTableOfContentsBlock(levels []string, leader string) TableOfContentsBlock {
-	return TableOfContentsBlock{Type: "table-of-contents", Levels: levels, Leader: leader}
-}
-
-type PageBreakBlock struct {
+	// AngleInDegrees Direction angle for linear gradients, in degrees. Defaults to 0.
+	AngleInDegrees float64 `json:"angle_in_degrees,omitempty"`
+	// BorderBottomLeftRadius Bottom-left corner radius in pixels.
+	BorderBottomLeftRadius int `json:"border_bottom_left_radius,omitempty"`
+	// BorderBottomRightRadius Bottom-right corner radius in pixels.
+	BorderBottomRightRadius int `json:"border_bottom_right_radius,omitempty"`
+	// BorderRadius Uniform border radius in pixels. Cannot be combined with per-corner radii.
+	BorderRadius int `json:"border_radius,omitempty"`
+	// BorderTopLeftRadius Top-left corner radius in pixels.
+	BorderTopLeftRadius int `json:"border_top_left_radius,omitempty"`
+	// BorderTopRightRadius Top-right corner radius in pixels.
+	BorderTopRightRadius int `json:"border_top_right_radius,omitempty"`
+	// Colors defines the colors.
+	Colors []GradientColorStop `json:"colors"`
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions"`
+	// GradientType Gradient type: 'linear' or 'radial'.
+	GradientType string `json:"gradient_type"`
+	// Index Z-order index of this layer. Must be >= 0.
+	Index int `json:"index"`
+	// Opacity Layer opacity from 0 (transparent) to 100 (opaque). Defaults to 100.
+	Opacity int `json:"opacity,omitempty"`
+	// Position defines the position.
+	Position Position `json:"position"`
+	// RotationInDegrees Rotation angle in degrees, from -180 to 180.
+	RotationInDegrees float64 `json:"rotation_in_degrees,omitempty"`
+	// Type Must be 'gradient'.
 	Type string `json:"type"`
 }
-
-func (PageBreakBlock) isContentBlock() {}
-
-func NewPageBreakBlock() PageBreakBlock {
-	return PageBreakBlock{Type: "page-break"}
+type GrayscaleOperation struct {
+	// Type Must be 'grayscale'. Converts the image to grayscale.
+	Type string `json:"type"`
 }
-
-type SeparatorBlock struct {
-	Type   string          `json:"type"`
-	Styles *SeparatorStyle `json:"styles,omitempty"`
+type GridBlock struct {
+	// Columns defines the columns.
+	Columns []GridColumn `json:"columns"`
+	// HorizontalAlignment Horizontal alignment of grid content.
+	HorizontalAlignment string `json:"horizontal_alignment,omitempty"`
+	// Styles defines the styles.
+	Styles GridStyleOverrides `json:"styles,omitempty"`
+	// Type Must be 'grid'.
+	Type string `json:"type"`
+	// VerticalAlignment Vertical alignment of grid content.
+	VerticalAlignment string `json:"vertical_alignment,omitempty"`
 }
-
-func (SeparatorBlock) isContentBlock()      {}
-func (SeparatorBlock) isHeaderFooterBlock() {}
-
-func NewSeparatorBlock() SeparatorBlock {
-	return SeparatorBlock{Type: "separator"}
+type GridColumn struct {
+	// Blocks Content blocks rendered inside this column.
+	Blocks []any `json:"blocks"`
+	// ColumnSpan Number of grid columns this column spans, from 1 to 12.
+	ColumnSpan int `json:"column_span"`
+	// HorizontalAlignment Horizontal alignment of content within this column.
+	HorizontalAlignment string `json:"horizontal_alignment,omitempty"`
+	// VerticalAlignment Vertical alignment of content within this column.
+	VerticalAlignment string `json:"vertical_alignment,omitempty"`
 }
-
-type DocumentQrCodeBlock struct {
-	Type       string  `json:"type"`
-	Value      string  `json:"value"`
-	WidthInPt  float64 `json:"width_in_pt"`
+type GridStyle struct {
+	// BackgroundColor Grid background color as a 6-digit hex code.
+	BackgroundColor string `json:"background_color"`
+	// BorderColor Grid border color as a 6-digit hex code.
+	BorderColor string `json:"border_color"`
+	// BorderWidthInPt Border width in points. Must be >= 0.
+	BorderWidthInPt float64 `json:"border_width_in_pt"`
+	// GapInPt Gap between columns in points. Must be >= 0.
+	GapInPt float64 `json:"gap_in_pt"`
+}
+type GridStyleOverrides struct {
+	// BackgroundColor Override grid background color.
+	BackgroundColor string `json:"background_color,omitempty"`
+	// BorderColor Override grid border color.
+	BorderColor string `json:"border_color,omitempty"`
+	// BorderWidthInPt Override border width in points.
+	BorderWidthInPt float64 `json:"border_width_in_pt,omitempty"`
+	// GapInPt Override gap between columns in points.
+	GapInPt float64 `json:"gap_in_pt,omitempty"`
+}
+type HeadlineBlock struct {
+	// Level Headline level from h1 (largest) to h6 (smallest).
+	Level string `json:"level"`
+	// Styles defines the styles.
+	Styles HeadlineStyleOverrides `json:"styles,omitempty"`
+	// TableOfContents defines the table of contents.
+	TableOfContents HeadlineTableOfContents `json:"table_of_contents,omitempty"`
+	// Text Headline text content. Must not be empty.
+	Text string `json:"text"`
+	// Type Must be 'headline'.
+	Type string `json:"type"`
+}
+type HeadlineStyle struct {
+	// Color Headline text color as a 6-digit hex code.
+	Color string `json:"color"`
+	// FontFamily Font family name for headlines.
+	FontFamily string `json:"font_family"`
+	// FontSizeInPt Font size in points. Must be >= 1.
+	FontSizeInPt float64 `json:"font_size_in_pt"`
+	// FontWeight Font weight. Defaults to 'bold'.
+	FontWeight string `json:"font_weight,omitempty"`
+	// IsItalic Whether headlines are italic. Defaults to false.
+	IsItalic bool `json:"is_italic,omitempty"`
+	// SpacingAfterInPt Space after the headline in points.
+	SpacingAfterInPt float64 `json:"spacing_after_in_pt"`
+	// SpacingBeforeInPt Space before the headline in points.
+	SpacingBeforeInPt float64 `json:"spacing_before_in_pt"`
+}
+type HeadlineStyleOverrides struct {
+	// Color Override headline text color.
+	Color string `json:"color,omitempty"`
+	// FontFamily Override font family name.
+	FontFamily string `json:"font_family,omitempty"`
+	// FontSizeInPt Override font size in points.
+	FontSizeInPt float64 `json:"font_size_in_pt,omitempty"`
+	// FontWeight Override font weight.
+	FontWeight string `json:"font_weight,omitempty"`
+	// IsItalic Override italic style.
+	IsItalic bool `json:"is_italic,omitempty"`
+	// SpacingAfterInPt Override space after the headline.
+	SpacingAfterInPt float64 `json:"spacing_after_in_pt,omitempty"`
+	// SpacingBeforeInPt Override space before the headline.
+	SpacingBeforeInPt float64 `json:"spacing_before_in_pt,omitempty"`
+}
+type HeadlineTableOfContents struct {
+	// IsIncluded Whether to include this headline in the table of contents.
+	IsIncluded bool `json:"is_included,omitempty"`
+	// LabelOverride Custom label to show in the table of contents instead of the headline text.
+	LabelOverride string `json:"label_override,omitempty"`
+	// LevelOverride Override the headline level in the table of contents.
+	LevelOverride string `json:"level_override,omitempty"`
+}
+type IbanFieldConfig struct {
+	// DefaultValue Default IBAN value if the field is not found in the document.
+	DefaultValue string `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'IBAN' for an International Bank Account Number field.
+	Type string `json:"type"`
+}
+type ImageBlock struct {
+	// Buffer Base64-encoded image content.
+	Buffer []byte `json:"buffer"`
+	// Fit How the image fits the specified dimensions.
+	Fit string `json:"fit,omitempty"`
+	// HeightInPt Image height in points. Must be >= 1.
 	HeightInPt float64 `json:"height_in_pt"`
-	FgHexColor string  `json:"fg_hex_color,omitempty"`
-	BgHexColor string  `json:"bg_hex_color,omitempty"`
+	// Styles defines the styles.
+	Styles ImageStyleOverrides `json:"styles,omitempty"`
+	// Type Must be 'image'.
+	Type string `json:"type"`
+	// WidthInPt Image width in points. Must be >= 1.
+	WidthInPt float64 `json:"width_in_pt"`
 }
-
-func (DocumentQrCodeBlock) isContentBlock() {}
-
-func NewDocumentQrCodeBlock(value string, widthInPt float64, heightInPt float64) DocumentQrCodeBlock {
-	return DocumentQrCodeBlock{Type: "qr-code", Value: value, WidthInPt: widthInPt, HeightInPt: heightInPt}
+type ImageComposition struct {
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions"`
+	// Fonts defines the fonts.
+	Fonts []FontDefinition `json:"fonts,omitempty"`
+	// Layers defines the layers.
+	Layers []any `json:"layers"`
+	// OutputFormat defines the output format.
+	OutputFormat string `json:"output_format,omitempty"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
 }
-
-type DocumentBarcodeBlock struct {
-	Type       string  `json:"type"`
-	Value      string  `json:"value"`
-	Format     string  `json:"format"`
-	WidthInPt  float64 `json:"width_in_pt"`
-	HeightInPt float64 `json:"height_in_pt"`
-	FgHexColor string  `json:"fg_hex_color,omitempty"`
-	BgHexColor string  `json:"bg_hex_color,omitempty"`
+type ImageLayer struct {
+	// BorderBottomLeftRadius Bottom-left corner radius in pixels.
+	BorderBottomLeftRadius int `json:"border_bottom_left_radius,omitempty"`
+	// BorderBottomRightRadius Bottom-right corner radius in pixels.
+	BorderBottomRightRadius int `json:"border_bottom_right_radius,omitempty"`
+	// BorderRadius Uniform border radius in pixels. Cannot be combined with per-corner radii.
+	BorderRadius int `json:"border_radius,omitempty"`
+	// BorderTopLeftRadius Top-left corner radius in pixels.
+	BorderTopLeftRadius int `json:"border_top_left_radius,omitempty"`
+	// BorderTopRightRadius Top-right corner radius in pixels.
+	BorderTopRightRadius int `json:"border_top_right_radius,omitempty"`
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions,omitempty"`
+	// File defines the file.
+	File FileInput `json:"file"`
+	// Index Z-order index of this layer. Must be >= 0.
+	Index int `json:"index"`
+	// Opacity Layer opacity from 0 (transparent) to 100 (opaque). Defaults to 100.
+	Opacity int `json:"opacity,omitempty"`
+	// Position defines the position.
+	Position Position `json:"position,omitempty"`
+	// RotationInDegrees Rotation angle in degrees, from -180 to 180.
+	RotationInDegrees float64 `json:"rotation_in_degrees,omitempty"`
+	// ShouldRemoveBackground Whether to remove the image background. Defaults to false.
+	ShouldRemoveBackground bool `json:"should_remove_background,omitempty"`
+	// ShouldUseSmartCropping Whether to auto-crop to the most interesting region. Defaults to false.
+	ShouldUseSmartCropping bool `json:"should_use_smart_cropping,omitempty"`
+	// Type Must be 'image'.
+	Type string `json:"type"`
 }
-
-func (DocumentBarcodeBlock) isContentBlock() {}
-
-func NewDocumentBarcodeBlock(value string, format string, widthInPt float64, heightInPt float64) DocumentBarcodeBlock {
-	return DocumentBarcodeBlock{Type: "barcode", Value: value, Format: format, WidthInPt: widthInPt, HeightInPt: heightInPt}
+type ImageStyle struct {
+	// BorderColor Image border color as a 6-digit hex code.
+	BorderColor string `json:"border_color"`
+	// BorderWidthInPt Image border width in points. Must be >= 0.
+	BorderWidthInPt float64 `json:"border_width_in_pt"`
 }
-
+type ImageStyleOverrides struct {
+	// BorderColor Override image border color.
+	BorderColor string `json:"border_color,omitempty"`
+	// BorderWidthInPt Override image border width in points.
+	BorderWidthInPt float64 `json:"border_width_in_pt,omitempty"`
+}
+type InnerBorderStyle struct {
+	// Horizontal defines the horizontal.
+	Horizontal BorderStyle `json:"horizontal"`
+	// Vertical defines the vertical.
+	Vertical BorderStyle `json:"vertical"`
+}
+type InnerBorderStyleOverrides struct {
+	// Horizontal defines the horizontal.
+	Horizontal BorderStyleOverrides `json:"horizontal,omitempty"`
+	// Vertical defines the vertical.
+	Vertical BorderStyleOverrides `json:"vertical,omitempty"`
+}
+type IntegerFieldConfig struct {
+	// DefaultValue Default integer value if the field is not found in the document.
+	DefaultValue int `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Max Maximum allowed value (inclusive).
+	Max int `json:"max,omitempty"`
+	// Min Minimum allowed value (inclusive).
+	Min int `json:"min,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'INTEGER' for a whole-number field.
+	Type string `json:"type"`
+	// Unit Unit of measurement for context (e.g., 'kg', 'pcs').
+	Unit string `json:"unit,omitempty"`
+}
+type InvertColorsOperation struct {
+	// Type Must be 'invert_colors'. Inverts all color channels.
+	Type string `json:"type"`
+}
+type LayoutLayer struct {
+	// BackgroundColor Background color as a 6-digit hex code.
+	BackgroundColor string `json:"background_color,omitempty"`
+	// BackgroundLayers Layers rendered behind the main content as a background.
+	BackgroundLayers []any `json:"background_layers,omitempty"`
+	// BorderBottomLeftRadius Bottom-left corner radius in pixels.
+	BorderBottomLeftRadius int `json:"border_bottom_left_radius,omitempty"`
+	// BorderBottomRightRadius Bottom-right corner radius in pixels.
+	BorderBottomRightRadius int `json:"border_bottom_right_radius,omitempty"`
+	// BorderRadius Uniform border radius in pixels. Cannot be combined with per-corner radii.
+	BorderRadius int `json:"border_radius,omitempty"`
+	// BorderTopLeftRadius Top-left corner radius in pixels.
+	BorderTopLeftRadius int `json:"border_top_left_radius,omitempty"`
+	// BorderTopRightRadius Top-right corner radius in pixels.
+	BorderTopRightRadius int `json:"border_top_right_radius,omitempty"`
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions,omitempty"`
+	// Direction Layout direction for child layers. Defaults to 'horizontal'.
+	Direction string `json:"direction,omitempty"`
+	// Gap Spacing between child layers in pixels. Defaults to 0.
+	Gap int `json:"gap,omitempty"`
+	// HorizontalAlignment Horizontal alignment of children: 'start', 'center', or 'end'. Defaults to 'start'.
+	HorizontalAlignment string `json:"horizontal_alignment,omitempty"`
+	// Index Z-order index of this layer. Must be >= 0.
+	Index int `json:"index"`
+	// Layers Child layers arranged according to the layout direction.
+	Layers []any `json:"layers"`
+	// Opacity Layer opacity from 0 (transparent) to 100 (opaque). Defaults to 100.
+	Opacity int `json:"opacity,omitempty"`
+	// Padding Uniform padding in pixels on all sides.
+	Padding int `json:"padding,omitempty"`
+	// PaddingBottom Bottom padding in pixels.
+	PaddingBottom int `json:"padding_bottom,omitempty"`
+	// PaddingLeft Left padding in pixels.
+	PaddingLeft int `json:"padding_left,omitempty"`
+	// PaddingRight Right padding in pixels.
+	PaddingRight int `json:"padding_right,omitempty"`
+	// PaddingTop Top padding in pixels.
+	PaddingTop int `json:"padding_top,omitempty"`
+	// Position defines the position.
+	Position Position `json:"position,omitempty"`
+	// Type Must be 'layout'.
+	Type string `json:"type"`
+	// VerticalAlignment Vertical alignment of children: 'start', 'center', or 'end'. Defaults to 'start'.
+	VerticalAlignment string `json:"vertical_alignment,omitempty"`
+}
+type LinkStyle struct {
+	// Color Link text color as a 6-digit hex code.
+	Color string `json:"color"`
+	// IsUnderlined Whether links are underlined. Defaults to true.
+	IsUnderlined bool `json:"is_underlined,omitempty"`
+}
+type ListBlock struct {
+	// Items defines the items.
+	Items []ListItem `json:"items"`
+	// Styles defines the styles.
+	Styles ListStyleOverrides `json:"styles,omitempty"`
+	// Type Must be 'list'.
+	Type string `json:"type"`
+	// Variant List variant: 'ordered' (numbered) or 'unordered' (bulleted).
+	Variant string `json:"variant"`
+}
+type ListItem struct {
+	// Text List item text content. Must not be empty.
+	Text string `json:"text"`
+}
+type ListStyle struct {
+	// MarkerColor Bullet or number color as a 6-digit hex code.
+	MarkerColor string `json:"marker_color"`
+	// MarkerGapInPt Gap between marker and text in points.
+	MarkerGapInPt float64 `json:"marker_gap_in_pt"`
+	// TextStyle defines the text style.
+	TextStyle TextStyle `json:"text_style"`
+}
+type ListStyleOverrides struct {
+	// MarkerColor Override bullet or number color.
+	MarkerColor string `json:"marker_color,omitempty"`
+	// MarkerGapInPt Override gap between marker and text.
+	MarkerGapInPt float64 `json:"marker_gap_in_pt,omitempty"`
+	// TextStyle defines the text style.
+	TextStyle TextStyleOverrides `json:"text_style,omitempty"`
+}
+type Margins struct {
+	// BottomInPt Bottom margin in points. Must be >= 0.
+	BottomInPt float64 `json:"bottom_in_pt"`
+	// LeftInPt Left margin in points. Must be >= 0.
+	LeftInPt float64 `json:"left_in_pt"`
+	// RightInPt Right margin in points. Must be >= 0.
+	RightInPt float64 `json:"right_in_pt"`
+	// TopInPt Top margin in points. Must be >= 0.
+	TopInPt float64 `json:"top_in_pt"`
+}
+type Metadata struct {
+	// Author Document author name.
+	Author string `json:"author,omitempty"`
+	// Language BCP 47 language tag (e.g., 'en', 'de'). Defaults to 'en'.
+	Language string `json:"language,omitempty"`
+	// Title Document title. Must not be empty.
+	Title string `json:"title"`
+}
+type ModulateOperation struct {
+	// Brightness Brightness multiplier. 1.0 is unchanged, > 1.0 brightens, < 1.0 darkens.
+	Brightness float64 `json:"brightness,omitempty"`
+	// Hue Hue rotation in degrees.
+	Hue float64 `json:"hue,omitempty"`
+	// Saturation Saturation multiplier. 1.0 is unchanged, 0.0 is fully desaturated.
+	Saturation float64 `json:"saturation,omitempty"`
+	// Type Must be 'modulate'.
+	Type string `json:"type"`
+}
+type OpacityOperation struct {
+	// OpacityInPercent Opacity percentage from 0 (fully transparent) to 100 (fully opaque).
+	OpacityInPercent int `json:"opacity_in_percent"`
+	// Type Must be 'opacity'.
+	Type string `json:"type"`
+}
+type OuterBorderStyle struct {
+	// Bottom defines the bottom.
+	Bottom BorderStyle `json:"bottom"`
+	// Left defines the left.
+	Left BorderStyle `json:"left"`
+	// Right defines the right.
+	Right BorderStyle `json:"right"`
+	// Top defines the top.
+	Top BorderStyle `json:"top"`
+}
+type OuterBorderStyleOverrides struct {
+	// Bottom defines the bottom.
+	Bottom BorderStyleOverrides `json:"bottom,omitempty"`
+	// Left defines the left.
+	Left BorderStyleOverrides `json:"left,omitempty"`
+	// Right defines the right.
+	Right BorderStyleOverrides `json:"right,omitempty"`
+	// Top defines the top.
+	Top BorderStyleOverrides `json:"top,omitempty"`
+}
+type Page struct {
+	// BackgroundColor Page background color as a 6-digit hex code.
+	BackgroundColor string `json:"background_color,omitempty"`
+	// Margins defines the margins.
+	Margins Margins `json:"margins"`
+	// Size defines the size.
+	Size PageSize `json:"size"`
+}
+type PageBreakBlock struct {
+	// Type Must be 'page-break'. Forces a page break.
+	Type string `json:"type"`
+}
 type PageNumberBlock struct {
-	Type          string     `json:"type"`
-	TextAlignment string     `json:"text_alignment,omitempty"`
-	Styles        *TextStyle `json:"styles,omitempty"`
+	// Styles defines the styles.
+	Styles TextStyleOverrides `json:"styles,omitempty"`
+	// TextAlignment Text alignment for the page number.
+	TextAlignment string `json:"text_alignment,omitempty"`
+	// Type Must be 'page-number'. Renders the current page number.
+	Type string `json:"type"`
 }
-
-func (PageNumberBlock) isHeaderFooterBlock() {}
-
-func NewPageNumberBlock() PageNumberBlock {
-	return PageNumberBlock{Type: "page-number"}
+type PageSize struct {
+	// HeightInPt Custom page height in points. Must be >= 1.
+	HeightInPt float64 `json:"height_in_pt,omitempty"`
+	// Preset Standard page size preset name.
+	Preset string `json:"preset,omitempty"`
+	// WidthInPt Custom page width in points. Must be >= 1.
+	WidthInPt float64 `json:"width_in_pt,omitempty"`
 }
-
-type DocumentDefinition struct {
-	Metadata                   DocumentMetadata         `json:"metadata"`
-	Content                    []ContentBlock           `json:"content"`
-	Page                       *DocumentPage            `json:"page,omitempty"`
-	Styles                     *DocumentStyles          `json:"styles,omitempty"`
-	Fonts                      []DocumentFontDefinition `json:"fonts,omitempty"`
-	Header                     []HeaderFooterBlock      `json:"header,omitempty"`
-	Footer                     []HeaderFooterBlock      `json:"footer,omitempty"`
-	HeaderDistanceFromEdgeInPt *float64                 `json:"header_distance_from_edge_in_pt,omitempty"`
-	FooterDistanceFromEdgeInPt *float64                 `json:"footer_distance_from_edge_in_pt,omitempty"`
+type ParagraphBlock struct {
+	// Markdown Markdown text content. Alternative to runs.
+	Markdown string `json:"markdown,omitempty"`
+	// Runs defines the runs.
+	Runs []ParagraphRun `json:"runs,omitempty"`
+	// Styles defines the styles.
+	Styles TextStyleOverrides `json:"styles,omitempty"`
+	// TextAlignment Text alignment within the paragraph.
+	TextAlignment string `json:"text_alignment,omitempty"`
+	// Type Must be 'paragraph'.
+	Type string `json:"type"`
 }
-
-// ── Request Types ──────────────────────────────────────────────────────────
-
-type ExtractionSchema map[string]FieldConfig
-
-type ExtractRequest struct {
-	Files  []FileInput      `json:"files"`
+type ParagraphRun struct {
+	// FontWeight Font weight override for this run.
+	FontWeight string `json:"font_weight,omitempty"`
+	// IsItalic Whether this run is italic.
+	IsItalic bool `json:"is_italic,omitempty"`
+	// LinkUrl URL to make this run a clickable link.
+	LinkUrl string `json:"link_url,omitempty"`
+	// Text Text content of the run. Must not be empty.
+	Text string `json:"text"`
+}
+type Position struct {
+	// XInPx Horizontal position in pixels from the left edge. Must be >= 0.
+	XInPx float64 `json:"x_in_px"`
+	// YInPx Vertical position in pixels from the top edge. Must be >= 0.
+	YInPx float64 `json:"y_in_px"`
+}
+type QrCodeBlock struct {
+	// BgHexColor Background color as a 6-digit hex code.
+	BgHexColor string `json:"bg_hex_color,omitempty"`
+	// FgHexColor Foreground color as a 6-digit hex code.
+	FgHexColor string `json:"fg_hex_color,omitempty"`
+	// HeightInPt QR code height in points. Must be >= 1.
+	HeightInPt float64 `json:"height_in_pt"`
+	// Type Must be 'qr-code'.
+	Type string `json:"type"`
+	// Value Data to encode in the QR code.
+	Value string `json:"value"`
+	// WidthInPt QR code width in points. Must be >= 1.
+	WidthInPt float64 `json:"width_in_pt"`
+}
+type QrCodeLayer struct {
+	// BackgroundHexColor QR code background color as a 6-digit hex code.
+	BackgroundHexColor string `json:"background_hex_color"`
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions"`
+	// ForegroundHexColor QR code foreground color as a 6-digit hex code.
+	ForegroundHexColor string `json:"foreground_hex_color"`
+	// Index Z-order index of this layer. Must be >= 0.
+	Index int `json:"index"`
+	// Opacity Layer opacity from 0 (transparent) to 100 (opaque). Defaults to 100.
+	Opacity int `json:"opacity,omitempty"`
+	// Position defines the position.
+	Position Position `json:"position"`
+	// RotationInDegrees Rotation angle in degrees, from -180 to 180.
+	RotationInDegrees float64 `json:"rotation_in_degrees,omitempty"`
+	// Type Must be 'qr-code'.
+	Type string `json:"type"`
+	// Value Data to encode in the QR code.
+	Value string `json:"value"`
+}
+type RemoveBackgroundOperation struct {
+	// BackgroundHexColor Optional replacement background color as a 6-digit hex code.
+	BackgroundHexColor string `json:"background_hex_color,omitempty"`
+	// Type Must be 'remove_background'.
+	Type string `json:"type"`
+}
+type RemoveTransparencyOperation struct {
+	// HexColor Background color to replace transparent areas, as a 6-digit hex code.
+	HexColor string `json:"hex_color"`
+	// Type Must be 'remove_transparency'.
+	Type string `json:"type"`
+}
+type ResizeOperation struct {
+	// Fit How the image fits the target dimensions.
+	Fit string `json:"fit"`
+	// HeightInPx Target height in pixels. Must be > 0.
+	HeightInPx int `json:"height_in_px"`
+	// Type Must be 'resize'.
+	Type string `json:"type"`
+	// WidthInPx Target width in pixels. Must be > 0.
+	WidthInPx int `json:"width_in_px"`
+}
+type RotateOperation struct {
+	// AngleInDegrees Rotation angle in degrees. Positive rotates clockwise.
+	AngleInDegrees float64 `json:"angle_in_degrees"`
+	// HexColor Background fill color for uncovered areas after rotation, as a 6-digit hex code.
+	HexColor string `json:"hex_color,omitempty"`
+	// Type Must be 'rotate'.
+	Type string `json:"type"`
+}
+type SeparatorBlock struct {
+	// Styles defines the styles.
+	Styles SeparatorStyleOverrides `json:"styles,omitempty"`
+	// Type Must be 'separator'. Renders a horizontal line.
+	Type string `json:"type"`
+}
+type SeparatorStyle struct {
+	// Color Separator line color as a 6-digit hex code.
+	Color string `json:"color"`
+	// SpacingAfterInPt Space after the separator in points.
+	SpacingAfterInPt float64 `json:"spacing_after_in_pt"`
+	// SpacingBeforeInPt Space before the separator in points.
+	SpacingBeforeInPt float64 `json:"spacing_before_in_pt"`
+	// ThicknessInPt Line thickness in points. Must be >= 0.
+	ThicknessInPt float64 `json:"thickness_in_pt"`
+}
+type SeparatorStyleOverrides struct {
+	// Color Override separator color.
+	Color string `json:"color,omitempty"`
+	// SpacingAfterInPt Override space after the separator.
+	SpacingAfterInPt float64 `json:"spacing_after_in_pt,omitempty"`
+	// SpacingBeforeInPt Override space before the separator.
+	SpacingBeforeInPt float64 `json:"spacing_before_in_pt,omitempty"`
+	// ThicknessInPt Override line thickness in points.
+	ThicknessInPt float64 `json:"thickness_in_pt,omitempty"`
+}
+type SharpenOperation struct {
+	// Sigma Sharpening sigma. Must be > 0. Higher values sharpen more.
+	Sigma float64 `json:"sigma"`
+	// Type Must be 'sharpen'.
+	Type string `json:"type"`
+}
+type SheetGenerationRequest struct {
+	// Fonts defines the fonts.
+	Fonts []FontDefinition `json:"fonts,omitempty"`
+	// Format defines the format.
+	Format string `json:"format"`
+	// Sheets defines the sheets.
+	Sheets []any `json:"sheets"`
+	// Styles defines the styles.
+	Styles SheetStyles `json:"styles,omitempty"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
+}
+type SheetStyles struct {
+	// Body defines the body.
+	Body CellStyle `json:"body,omitempty"`
+	// Header defines the header.
+	Header CellStyle `json:"header,omitempty"`
+}
+type SmartCropOperation struct {
+	// HeightInPx Target crop height in pixels. Must be > 0.
+	HeightInPx int `json:"height_in_px"`
+	// Type Must be 'smart_crop'. Crops to the most interesting region.
+	Type string `json:"type"`
+	// WidthInPx Target crop width in pixels. Must be > 0.
+	WidthInPx int `json:"width_in_px"`
+}
+type SolidColorLayer struct {
+	// AngledEdges defines the angled edges.
+	AngledEdges []AngledEdge `json:"angled_edges,omitempty"`
+	// BorderBottomLeftRadius Bottom-left corner radius in pixels.
+	BorderBottomLeftRadius int `json:"border_bottom_left_radius,omitempty"`
+	// BorderBottomRightRadius Bottom-right corner radius in pixels.
+	BorderBottomRightRadius int `json:"border_bottom_right_radius,omitempty"`
+	// BorderRadius Uniform border radius in pixels. Cannot be combined with per-corner radii.
+	BorderRadius int `json:"border_radius,omitempty"`
+	// BorderTopLeftRadius Top-left corner radius in pixels.
+	BorderTopLeftRadius int `json:"border_top_left_radius,omitempty"`
+	// BorderTopRightRadius Top-right corner radius in pixels.
+	BorderTopRightRadius int `json:"border_top_right_radius,omitempty"`
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions,omitempty"`
+	// HexColor Fill color as a 6-digit hex code.
+	HexColor string `json:"hex_color"`
+	// Index Z-order index of this layer. Must be >= 0.
+	Index int `json:"index"`
+	// Opacity Layer opacity from 0 (transparent) to 100 (opaque). Defaults to 100.
+	Opacity int `json:"opacity,omitempty"`
+	// Position defines the position.
+	Position Position `json:"position,omitempty"`
+	// RotationInDegrees Rotation angle in degrees, from -180 to 180.
+	RotationInDegrees float64 `json:"rotation_in_degrees,omitempty"`
+	// Type Must be 'solid-color'.
+	Type string `json:"type"`
+}
+type TableBlock struct {
+	// ColumnWidthsInPercent Relative column widths in percent. Each value must be >= 1.
+	ColumnWidthsInPercent []float64 `json:"column_widths_in_percent,omitempty"`
+	// Header defines the header.
+	Header TableRow `json:"header,omitempty"`
+	// Rows defines the rows.
+	Rows []TableRow `json:"rows"`
+	// Styles defines the styles.
+	Styles TableStyleOverrides `json:"styles,omitempty"`
+	// Type Must be 'table'.
+	Type string `json:"type"`
+}
+type TableBodyStyle struct {
+	// BackgroundColor Table body background color.
+	BackgroundColor string `json:"background_color"`
+	// FontSizeInPt Body text font size in points. Must be >= 1.
+	FontSizeInPt float64 `json:"font_size_in_pt"`
+	// TextColor Table body text color.
+	TextColor string `json:"text_color"`
+}
+type TableBodyStyleOverrides struct {
+	// BackgroundColor Override body background color.
+	BackgroundColor string `json:"background_color,omitempty"`
+	// FontSizeInPt Override body font size in points.
+	FontSizeInPt float64 `json:"font_size_in_pt,omitempty"`
+	// TextColor Override body text color.
+	TextColor string `json:"text_color,omitempty"`
+}
+type TableBorderStyle struct {
+	// Inner defines the inner.
+	Inner InnerBorderStyle `json:"inner"`
+	// Outer defines the outer.
+	Outer OuterBorderStyle `json:"outer"`
+}
+type TableBorderStyleOverrides struct {
+	// Inner defines the inner.
+	Inner InnerBorderStyleOverrides `json:"inner,omitempty"`
+	// Outer defines the outer.
+	Outer OuterBorderStyleOverrides `json:"outer,omitempty"`
+}
+type TableCell struct {
+	// ColumnSpan Number of columns this cell spans. Must be >= 1.
+	ColumnSpan int `json:"column_span,omitempty"`
+	// HorizontalAlignment Text alignment within the cell.
+	HorizontalAlignment string `json:"horizontal_alignment,omitempty"`
+	// RowSpan Number of rows this cell spans. Must be >= 1.
+	RowSpan int `json:"row_span,omitempty"`
+	// Styles defines the styles.
+	Styles TableCellStyle `json:"styles,omitempty"`
+	// Text Cell text content. Must not be empty.
+	Text string `json:"text"`
+}
+type TableCellStyle struct {
+	// BackgroundColor Cell background color.
+	BackgroundColor string `json:"background_color,omitempty"`
+	// FontSizeInPt Cell font size in points.
+	FontSizeInPt float64 `json:"font_size_in_pt,omitempty"`
+	// FontWeight Cell font weight.
+	FontWeight string `json:"font_weight,omitempty"`
+	// IsItalic Whether cell text is italic.
+	IsItalic bool `json:"is_italic,omitempty"`
+	// TextColor Cell text color.
+	TextColor string `json:"text_color,omitempty"`
+}
+type TableHeaderStyle struct {
+	// BackgroundColor Header row background color.
+	BackgroundColor string `json:"background_color"`
+	// FontSizeInPt Header font size in points.
+	FontSizeInPt float64 `json:"font_size_in_pt"`
+	// FontWeight Header font weight. Defaults to 'bold'.
+	FontWeight string `json:"font_weight,omitempty"`
+	// TextColor Header row text color.
+	TextColor string `json:"text_color"`
+}
+type TableHeaderStyleOverrides struct {
+	// BackgroundColor Override header background color.
+	BackgroundColor string `json:"background_color,omitempty"`
+	// FontSizeInPt Override header font size.
+	FontSizeInPt float64 `json:"font_size_in_pt,omitempty"`
+	// FontWeight Override header font weight.
+	FontWeight string `json:"font_weight,omitempty"`
+	// TextColor Override header text color.
+	TextColor string `json:"text_color,omitempty"`
+}
+type TableOfContentsBlock struct {
+	// Leader Leader style between entry and page number.
+	Leader string `json:"leader"`
+	// Levels Headline levels to include in the table of contents.
+	Levels []string `json:"levels"`
+	// Styles defines the styles.
+	Styles TextStyleOverrides `json:"styles,omitempty"`
+	// TextAlignment Text alignment for table of contents entries.
+	TextAlignment string `json:"text_alignment,omitempty"`
+	// Type Must be 'table-of-contents'.
+	Type string `json:"type"`
+}
+type TableRow struct {
+	// Cells defines the cells.
+	Cells []TableCell `json:"cells"`
+}
+type TableStyle struct {
+	// Body defines the body.
+	Body TableBodyStyle `json:"body"`
+	// Border defines the border.
+	Border TableBorderStyle `json:"border"`
+	// Header defines the header.
+	Header TableHeaderStyle `json:"header"`
+}
+type TableStyleOverrides struct {
+	// Body defines the body.
+	Body TableBodyStyleOverrides `json:"body,omitempty"`
+	// Border defines the border.
+	Border TableBorderStyleOverrides `json:"border,omitempty"`
+	// Header defines the header.
+	Header TableHeaderStyleOverrides `json:"header,omitempty"`
+}
+type TextFieldConfig struct {
+	// DefaultValue Default value if the field is not found in the document.
+	DefaultValue string `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// MaxLength Maximum character length for the extracted text. Must be > 0.
+	MaxLength int `json:"max_length,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'TEXT' for a single-line text field.
+	Type string `json:"type"`
+}
+type TextLayer struct {
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions"`
+	// FontName Font family name to use for rendering.
+	FontName string `json:"font_name"`
+	// FontSizeInPx Font size in pixels. Must be > 0.
+	FontSizeInPx int `json:"font_size_in_px"`
+	// FontStyle Font style: 'normal' or 'italic'. Defaults to 'normal'.
+	FontStyle string `json:"font_style,omitempty"`
+	// FontWeight Font weight. Defaults to 'regular'.
+	FontWeight string `json:"font_weight,omitempty"`
+	// Index Z-order index of this layer. Must be >= 0.
+	Index int `json:"index"`
+	// IsSplittingLines Whether to wrap text across multiple lines. Defaults to true.
+	IsSplittingLines bool `json:"is_splitting_lines,omitempty"`
+	// Opacity Layer opacity from 0 (transparent) to 100 (opaque). Defaults to 100.
+	Opacity int `json:"opacity,omitempty"`
+	// ParagraphSpacingInPx Extra spacing between paragraphs in pixels.
+	ParagraphSpacingInPx int `json:"paragraph_spacing_in_px,omitempty"`
+	// Position defines the position.
+	Position Position `json:"position"`
+	// RotationInDegrees Rotation angle in degrees, from -180 to 180.
+	RotationInDegrees float64 `json:"rotation_in_degrees,omitempty"`
+	// ShouldAutoScale Whether to auto-scale the font to fit the layer dimensions. Defaults to false.
+	ShouldAutoScale bool `json:"should_auto_scale,omitempty"`
+	// Text Text content to render. Must not be empty.
+	Text string `json:"text"`
+	// TextAlign Horizontal text alignment within the layer. Defaults to 'left'.
+	TextAlign string `json:"text_align,omitempty"`
+	// TextColor Text color as a 6-digit hex code.
+	TextColor string `json:"text_color"`
+	// Type Must be 'text'.
+	Type string `json:"type"`
+	// VerticalAlign Vertical text alignment within the layer. Defaults to 'top'.
+	VerticalAlign string `json:"vertical_align,omitempty"`
+}
+type TextStyle struct {
+	// Color Text color as a 6-digit hex code.
+	Color string `json:"color"`
+	// FontFamily Font family name for body text.
+	FontFamily string `json:"font_family"`
+	// FontSizeInPt Font size in points. Must be >= 1.
+	FontSizeInPt float64 `json:"font_size_in_pt"`
+	// FontWeight Font weight. Defaults to 'regular'.
+	FontWeight string `json:"font_weight,omitempty"`
+	// IsItalic Whether text is italic. Defaults to false.
+	IsItalic bool `json:"is_italic,omitempty"`
+	// LineHeight Line height multiplier. Must be >= 0.5.
+	LineHeight float64 `json:"line_height"`
+}
+type TextStyleOverrides struct {
+	// Color Override text color.
+	Color string `json:"color,omitempty"`
+	// FontFamily Override font family name.
+	FontFamily string `json:"font_family,omitempty"`
+	// FontSizeInPt Override font size in points.
+	FontSizeInPt float64 `json:"font_size_in_pt,omitempty"`
+	// FontWeight Override font weight.
+	FontWeight string `json:"font_weight,omitempty"`
+	// IsItalic Override italic style.
+	IsItalic bool `json:"is_italic,omitempty"`
+	// LineHeight Override line height multiplier.
+	LineHeight float64 `json:"line_height,omitempty"`
+}
+type TextareaFieldConfig struct {
+	// DefaultValue Default value if the field is not found in the document.
+	DefaultValue string `json:"default_value,omitempty"`
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// MaxLength Maximum character length for the extracted text. Must be > 0.
+	MaxLength int `json:"max_length,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'TEXTAREA' for a multi-line text field.
+	Type string `json:"type"`
+}
+type ThresholdOperation struct {
+	// IsGrayscale Whether to convert to grayscale before applying the threshold.
+	IsGrayscale bool `json:"is_grayscale"`
+	// Type Must be 'threshold'.
+	Type string `json:"type"`
+	// Value Threshold value from 0 to 255. Pixels above become white, below become black.
+	Value int `json:"value"`
+}
+type TimeFieldConfig struct {
+	// Description Human-readable description guiding the AI on what to extract for this field.
+	Description string `json:"description"`
+	// IsRequired Whether this field must be present in the extraction result. Defaults to false.
+	IsRequired bool `json:"is_required,omitempty"`
+	// Name Unique field name used as the key in extraction results.
+	Name string `json:"name"`
+	// Type Must be 'TIME' for a time field (HH:MM:SS).
+	Type string `json:"type"`
+}
+type TintOperation struct {
+	// HexColor Tint color as a 6-digit hex code (e.g., '#FF0000').
+	HexColor string `json:"hex_color"`
+	// Type Must be 'tint'.
+	Type string `json:"type"`
+}
+type TransformOperation = any
+type TrimOperation struct {
+	// Threshold Color difference threshold for trimming. Must be >= 0. Lower is stricter.
+	Threshold int `json:"threshold"`
+	// Type Must be 'trim'. Removes uniform borders from the image.
+	Type string `json:"type"`
+}
+type UpscaleOperation struct {
+	// Factor Upscale multiplier. Allowed values: 2, 3, or 4.
+	Factor string `json:"factor"`
+	// Type Must be 'upscale'.
+	Type string `json:"type"`
+}
+type UrlFileInput struct {
+	// FetchOptions defines the fetch options.
+	FetchOptions FetchOptions `json:"fetch_options,omitempty"`
+	// Name Optional file name including extension (e.g., 'report.pdf'). Used for format detection when fetching direct files.
+	Name string `json:"name,omitempty"`
+	// Type Must be 'url' for remote file input.
+	Type string `json:"type"`
+	// Url URL to fetch the file from.
+	Url string `json:"url"`
+}
+type WebsiteExtractionRequest struct {
+	// File defines the file.
+	File UrlFileInput `json:"file"`
+	// Schema defines the schema.
 	Schema ExtractionSchema `json:"schema"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
+}
+type WebsiteExtractionSuccessResponse struct {
+	// Data Extracted fields keyed by requested field name.
+	Data any `json:"data"`
+	// Metadata defines the metadata.
+	Metadata WebsiteMetadata `json:"metadata"`
+	// Success defines the success.
+	Success any `json:"success"`
+}
+type WebsiteMetadata struct {
+	// Article defines the article.
+	Article any `json:"article,omitempty"`
+	// Assets defines the assets.
+	Assets []any `json:"assets,omitempty"`
+	// BodySize defines the body size.
+	BodySize int `json:"body_size,omitempty"`
+	// ContentType defines the content type.
+	ContentType string `json:"content_type,omitempty"`
+	// DublinCore defines the dublin core.
+	DublinCore any `json:"dublin_core,omitempty"`
+	// Favicons defines the favicons.
+	Favicons []any `json:"favicons,omitempty"`
+	// Feeds defines the feeds.
+	Feeds []any `json:"feeds,omitempty"`
+	// FinalUrl defines the final url.
+	FinalUrl string `json:"final_url"`
+	// Headings defines the headings.
+	Headings []any `json:"headings,omitempty"`
+	// Hreflang defines the hreflang.
+	Hreflang []any `json:"hreflang,omitempty"`
+	// Images defines the images.
+	Images []any `json:"images,omitempty"`
+	// JsonLd defines the json ld.
+	JsonLd []any `json:"json_ld,omitempty"`
+	// Links defines the links.
+	Links []any `json:"links,omitempty"`
+	// MetaRefreshUrl defines the meta refresh url.
+	MetaRefreshUrl string `json:"meta_refresh_url,omitempty"`
+	// NofollowDetected defines the nofollow detected.
+	NofollowDetected bool `json:"nofollow_detected,omitempty"`
+	// NoindexDetected defines the noindex detected.
+	NoindexDetected bool `json:"noindex_detected,omitempty"`
+	// OpenGraph defines the open graph.
+	OpenGraph any `json:"open_graph,omitempty"`
+	// Page defines the page.
+	Page any `json:"page,omitempty"`
+	// PageCount defines the page count.
+	PageCount int `json:"page_count"`
+	// RequestedUrl defines the requested url.
+	RequestedUrl string `json:"requested_url"`
+	// ResponseMeta defines the response meta.
+	ResponseMeta any `json:"response_meta,omitempty"`
+	// StatusCode defines the status code.
+	StatusCode int `json:"status_code,omitempty"`
+	// Twitter defines the twitter.
+	Twitter any `json:"twitter,omitempty"`
+	// WordCount defines the word count.
+	WordCount int `json:"word_count,omitempty"`
+}
+type ExtractDocumentRequest struct {
+	// Files defines the files.
+	Files []FileInput `json:"files"`
+	// Schema defines the schema.
+	Schema ExtractionSchema `json:"schema"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
 }
 
-type ExtractAsyncRequest struct {
-	Files      []FileInput      `json:"files"`
-	Schema     ExtractionSchema `json:"schema"`
-	WebhookURL string           `json:"webhook_url"`
-}
-
-type TransformRequest struct {
-	File       FileInput            `json:"file"`
-	Operations []TransformOperation `json:"operations"`
-}
-
-type TransformAsyncRequest struct {
-	File       FileInput            `json:"file"`
-	Operations []TransformOperation `json:"operations"`
-	WebhookURL string               `json:"webhook_url"`
-}
-
-type GenerateImageRequest struct {
-	Dimensions   Dimensions            `json:"dimensions"`
-	Layers       []Layer               `json:"layers"`
-	Fonts        []ImageFontDefinition `json:"fonts,omitempty"`
-	OutputFormat string                `json:"output_format,omitempty"`
-}
-
-type GenerateImageAsyncRequest struct {
-	Dimensions   Dimensions            `json:"dimensions"`
-	Layers       []Layer               `json:"layers"`
-	Fonts        []ImageFontDefinition `json:"fonts,omitempty"`
-	OutputFormat string                `json:"output_format,omitempty"`
-	WebhookURL   string                `json:"webhook_url"`
+type ExtractDocumentAsyncRequest struct {
+	// Files defines the files.
+	Files []FileInput `json:"files"`
+	// Schema defines the schema.
+	Schema ExtractionSchema `json:"schema"`
+	// WebhookURL Webhook URL for async processing.
+	WebhookURL string `json:"webhook_url"`
 }
 
 type GenerateDocumentRequest struct {
-	Format   string             `json:"format"`
-	Document DocumentDefinition `json:"document"`
+	// Document defines the document.
+	Document any `json:"document"`
+	// Format defines the format.
+	Format string `json:"format"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
 }
 
 type GenerateDocumentAsyncRequest struct {
-	Format     string             `json:"format"`
-	Document   DocumentDefinition `json:"document"`
-	WebhookURL string             `json:"webhook_url"`
+	// Document defines the document.
+	Document any `json:"document"`
+	// Format defines the format.
+	Format string `json:"format"`
+	// WebhookURL Webhook URL for async processing.
+	WebhookURL string `json:"webhook_url"`
 }
 
-// Sheet Generation
-
-type SheetColumn struct {
-	Name  string  `json:"name"`
-	Width float64 `json:"width,omitempty"`
+type ConvertDocumentToMarkdownRequest struct {
+	// File defines the file.
+	File FileInput `json:"file"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
 }
 
-type SheetCellStyle struct {
-	FontFamily          string  `json:"font_family,omitempty"`
-	FontSizeInPt        float64 `json:"font_size_in_pt,omitempty"`
-	IsBold              bool    `json:"is_bold,omitempty"`
-	IsItalic            bool    `json:"is_italic,omitempty"`
-	FontColor           string  `json:"font_color,omitempty"`
-	BackgroundColor     string  `json:"background_color,omitempty"`
-	HorizontalAlignment string  `json:"horizontal_alignment,omitempty"`
-	NumberFormat        string  `json:"number_format,omitempty"`
+type ConvertDocumentToMarkdownAsyncRequest struct {
+	// File defines the file.
+	File FileInput `json:"file"`
+	// WebhookURL Webhook URL for async processing.
+	WebhookURL string `json:"webhook_url"`
 }
 
-type SheetCell struct {
-	Value        interface{}     `json:"value"`
-	Format       string          `json:"format,omitempty"`
-	CurrencyCode string          `json:"currency_code,omitempty"`
-	NumberStyle  string          `json:"number_style,omitempty"`
-	DateStyle    string          `json:"date_style,omitempty"`
-	Styles       *SheetCellStyle `json:"styles,omitempty"`
-	FromCol      *int            `json:"from_col,omitempty"`
-	ToCol        *int            `json:"to_col,omitempty"`
-	FromRow      *int            `json:"from_row,omitempty"`
-	ToRow        *int            `json:"to_row,omitempty"`
+type GenerateImageRequest struct {
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions"`
+	// Fonts defines the fonts.
+	Fonts []FontDefinition `json:"fonts,omitempty"`
+	// Layers defines the layers.
+	Layers []any `json:"layers"`
+	// OutputFormat defines the output format.
+	OutputFormat string `json:"output_format,omitempty"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
 }
 
-type Sheet struct {
-	Name    string        `json:"name"`
-	Columns []SheetColumn `json:"columns"`
-	Rows    [][]SheetCell `json:"rows"`
+type GenerateImageAsyncRequest struct {
+	// Dimensions defines the dimensions.
+	Dimensions Dimensions `json:"dimensions"`
+	// Fonts defines the fonts.
+	Fonts []FontDefinition `json:"fonts,omitempty"`
+	// Layers defines the layers.
+	Layers []any `json:"layers"`
+	// OutputFormat defines the output format.
+	OutputFormat string `json:"output_format,omitempty"`
+	// WebhookURL Webhook URL for async processing.
+	WebhookURL string `json:"webhook_url"`
 }
 
-type SheetStyles struct {
-	Header *SheetCellStyle `json:"header,omitempty"`
-	Body   *SheetCellStyle `json:"body,omitempty"`
+type TransformImageRequest struct {
+	// File defines the file.
+	File FileInput `json:"file"`
+	// Operations defines the operations.
+	Operations []TransformOperation `json:"operations"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
 }
 
-type SheetFontDefinition struct {
-	Name   string `json:"name"`
-	Weight string `json:"weight"`
-	Style  string `json:"style"`
-	Buffer string `json:"buffer"`
+type TransformImageAsyncRequest struct {
+	// File defines the file.
+	File FileInput `json:"file"`
+	// Operations defines the operations.
+	Operations []TransformOperation `json:"operations"`
+	// WebhookURL Webhook URL for async processing.
+	WebhookURL string `json:"webhook_url"`
 }
 
 type GenerateSheetRequest struct {
-	Format string                `json:"format"`
-	Sheets []Sheet               `json:"sheets"`
-	Styles *SheetStyles          `json:"styles,omitempty"`
-	Fonts  []SheetFontDefinition `json:"fonts,omitempty"`
+	// Fonts defines the fonts.
+	Fonts []FontDefinition `json:"fonts,omitempty"`
+	// Format defines the format.
+	Format string `json:"format"`
+	// Sheets defines the sheets.
+	Sheets []any `json:"sheets"`
+	// Styles defines the styles.
+	Styles SheetStyles `json:"styles,omitempty"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
 }
 
 type GenerateSheetAsyncRequest struct {
-	GenerateSheetRequest
+	// Fonts defines the fonts.
+	Fonts []FontDefinition `json:"fonts,omitempty"`
+	// Format defines the format.
+	Format string `json:"format"`
+	// Sheets defines the sheets.
+	Sheets []any `json:"sheets"`
+	// Styles defines the styles.
+	Styles SheetStyles `json:"styles,omitempty"`
+	// WebhookURL Webhook URL for async processing.
+	WebhookURL string `json:"webhook_url"`
+}
+
+type ExtractWebsiteRequest struct {
+	// File defines the file.
+	File UrlFileInput `json:"file"`
+	// Schema defines the schema.
+	Schema ExtractionSchema `json:"schema"`
+	// WebhookUrl HTTPS URL to receive results asynchronously. If provided, returns 201 immediately.
+	WebhookUrl string `json:"webhook_url,omitempty"`
+}
+
+type ExtractWebsiteAsyncRequest struct {
+	// File defines the file.
+	File UrlFileInput `json:"file"`
+	// Schema defines the schema.
+	Schema ExtractionSchema `json:"schema"`
+	// WebhookURL Webhook URL for async processing.
 	WebhookURL string `json:"webhook_url"`
 }

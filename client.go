@@ -204,6 +204,7 @@ func (c *Client) doRequest(path string, body any) ([]byte, int, error) {
 		return nil, 0, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-IterationLayer-Integration", "sdk-go")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

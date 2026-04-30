@@ -16,6 +16,9 @@ func TestExtractDocumentPostsToEndpoint(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Fatalf("missing auth header")
 		}
+		if r.Header.Get("X-IterationLayer-Integration") != "sdk-go" {
+			t.Fatalf("missing integration header")
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true, "data": {}}`))
 	}))
@@ -51,6 +54,9 @@ func TestGenerateDocumentPostsToEndpoint(t *testing.T) {
 		}
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Fatalf("missing auth header")
+		}
+		if r.Header.Get("X-IterationLayer-Integration") != "sdk-go" {
+			t.Fatalf("missing integration header")
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true, "data": {}}`))
@@ -88,6 +94,9 @@ func TestConvertDocumentToMarkdownPostsToEndpoint(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Fatalf("missing auth header")
 		}
+		if r.Header.Get("X-IterationLayer-Integration") != "sdk-go" {
+			t.Fatalf("missing integration header")
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true, "data": {}}`))
 	}))
@@ -123,6 +132,9 @@ func TestGenerateImagePostsToEndpoint(t *testing.T) {
 		}
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Fatalf("missing auth header")
+		}
+		if r.Header.Get("X-IterationLayer-Integration") != "sdk-go" {
+			t.Fatalf("missing integration header")
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true, "data": {}}`))
@@ -160,6 +172,9 @@ func TestTransformImagePostsToEndpoint(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Fatalf("missing auth header")
 		}
+		if r.Header.Get("X-IterationLayer-Integration") != "sdk-go" {
+			t.Fatalf("missing integration header")
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true, "data": {}}`))
 	}))
@@ -196,6 +211,9 @@ func TestGenerateSheetPostsToEndpoint(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Fatalf("missing auth header")
 		}
+		if r.Header.Get("X-IterationLayer-Integration") != "sdk-go" {
+			t.Fatalf("missing integration header")
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true, "data": {}}`))
 	}))
@@ -231,6 +249,9 @@ func TestExtractWebsitePostsToEndpoint(t *testing.T) {
 		}
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Fatalf("missing auth header")
+		}
+		if r.Header.Get("X-IterationLayer-Integration") != "sdk-go" {
+			t.Fatalf("missing integration header")
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true, "data": {}}`))

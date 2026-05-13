@@ -1,5 +1,6 @@
 # Changelog
 
+v2.0.5: Update SDK package metadata
 v2.0.4: Add SDK integration attribution headers for usage analytics
 v2.0.3: Align generated SDK integrations and public types with authenticated website fetch options
 v2.0.2: Update generated website extraction types for authenticated website fetch options
